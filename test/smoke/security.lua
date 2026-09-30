@@ -104,6 +104,8 @@ H.ok(pos:find('serverData = existing and existing.serverData', 1, true),
     'stock batches retain server-only employee attribution until sale')
 H.ok(crafting:find('for _, undo in ipairs(removed) do', 1, true),
     'a partial ingredient removal is rolled back')
+H.ok(crafting:find('exports.qbinventory:CanCraftItems(src, needed, produced)', 1, true),
+    'combined output capacity is checked before ingredient removal')
 
 -- --- validation ------------------------------------------------------------
 

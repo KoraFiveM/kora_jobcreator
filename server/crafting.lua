@@ -82,8 +82,15 @@ function Crafting.craft(src, recipe, business)
         end
     end
 
-    -- Removals are rolled back item by item if one fails, so a partial
-    -- consumption can never happen: everything is taken, or nothing is.
+    local capacity, capacityErr = exports.qbinventory:CanCraftItems(src, needed, produced)
+    if not capacity then
+        if type(capacityErr) == 'string' and capacityErr:find('ingredient', 1, true) then
+            return false, 'You are missing ingredients.'
+        end
+        return false, 'You do not have room for that.'
+    end
+
+    -- Retain the existing ingredient refund when a removal fails.
     local removed = {}
     for _, ingredient in ipairs(needed) do
         local taken = exports.qbcore:removeItem(src, ingredient.item, ingredient.amount)
@@ -99,7 +106,8 @@ function Crafting.craft(src, recipe, business)
     local given = {}
     for _, product in ipairs(produced) do
         local added = exports.qbcore:addItem(src, product.item, product.amount, nil, product.info)
-        if added then given[#given + 1] = ('%dx %s'):format(product.amount, product.item) end
+        if not added then return false, 'You do not have room for that.' end
+        given[#given + 1] = ('%dx %s'):format(product.amount, product.item)
     end
 
     if Config.skills.enabled then
