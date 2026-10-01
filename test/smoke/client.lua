@@ -116,4 +116,66 @@ H.ok(crafting and crafting:find('recipes = values.recipes', 1, true),
 H.nope(crafting and crafting:find('while true do', 1, true),
     'crafting no longer loops through one recipe picker per selection')
 
+-- Execute the real sync lifecycle with plain business records, as create returns.
+local handlers, created, destroyed, stopping = {}, {}, {}, {}
+local refreshes, leaveAll = 0, 0
+local clientState = { definitions = {} }
+QbJobCreator = {
+    client = clientState,
+    Business = {
+        create = function(definition)
+            local record = { definition = definition }
+            created[#created + 1] = record
+            return record
+        end,
+        destroy = function(record, isStopping)
+            destroyed[#destroyed + 1] = record
+            stopping[#destroyed] = isStopping
+        end,
+    },
+    creator = { refresh = function() refreshes = refreshes + 1 end },
+}
+GetCurrentResourceName = function() return 'qbjobcreator' end
+RegisterNetEvent = function(name, callback) handlers[name] = callback end
+AddEventHandler = RegisterNetEvent
+CreateThread, exports = function() end, function() end
+TriggerServerEvent = function(name)
+    H.equal(name, 'qbjobcreator:server:leaveAll', 'resource stop retains its presence cleanup event')
+    leaveAll = leaveAll + 1
+end
+dofile(arg[1] or 'client/main.lua')
+local sync = handlers['qbjobcreator:client:sync']
+local first, neighbour = { id = 'one', rev = '1' }, { id = 'two', rev = '1' }
+sync({ first, neighbour })
+local original
+for _, record in ipairs(created) do if record.definition == first then original = record end end
+H.equal(#created, 2, 'initial sync creates both businesses')
+H.equal(#destroyed, 0, 'initial sync has nothing to tear down')
+sync({ { id = 'one', rev = '1' }, neighbour })
+H.equal(#created, 2, 'unchanged revision keeps live business handles')
+H.equal(clientState.definitions.one, first, 'unchanged revision retains its definition')
+local replacement = { id = 'one', rev = '2' }
+sync({ replacement, neighbour })
+H.equal(#destroyed, 1, 'changed revision tears down only the old business')
+H.equal(destroyed[1], original, 'cleanup receives the existing plain business record')
+H.equal(stopping[1], nil, 'normal replacement retains ordinary cleanup behavior')
+H.equal(#created, 3, 'changed revision creates one replacement')
+H.equal(created[3].definition, replacement, 'replacement uses the new definition')
+H.equal(clientState.definitions.one, replacement, 'changed definition reaches the client mirror')
+H.equal(clientState.definitions.two, neighbour, 'unchanged neighbour is preserved')
+H.equal(refreshes, 3, 'changed sync completes the creator refresh')
+sync({ neighbour })
+H.equal(destroyed[2], created[3], 'removed business uses the same cleanup function')
+H.equal(clientState.definitions.one, nil, 'removed definition is cleared')
+clientState.setDebug(true)
+H.equal(clientState.debug, true, 'debug preference still updates')
+H.equal(#destroyed, 3, 'debug rebuild keeps its cleanup path')
+H.equal(#created, 4, 'debug rebuild creates one remaining business')
+handlers.onClientResourceStop('other')
+H.equal(#destroyed, 3, 'another resource stopping does not affect businesses')
+handlers.onClientResourceStop('qbjobcreator')
+H.equal(destroyed[4], created[4], 'stop cleans up the current replacement record')
+H.equal(stopping[4], true, 'stop retains the flag that skips extra server round trips')
+H.equal(leaveAll, 1, 'stop publishes presence cleanup once')
+
 H.finish('client')

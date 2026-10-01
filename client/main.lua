@@ -40,7 +40,7 @@ local function apply(definitions)
         -- json.encode gives no key-order guarantee.
         local previous = Client.definitions[id]
         if not previous or previous.rev ~= definition.rev then
-            if live[id] then live[id]:destroy() end
+            if live[id] then Business.destroy(live[id]) end
             Client.definitions[id] = definition
             live[id] = Business.create(definition)
         end
