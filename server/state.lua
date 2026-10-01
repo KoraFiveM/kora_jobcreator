@@ -180,13 +180,25 @@ end
 
 ---Definitions as they go over the wire. `rejected` is a server-side diagnostic
 ---and is deliberately not replicated.
+---@param includePrivate? boolean Only trusted server consumers need module webhooks.
 ---@return table[]
-function State.snapshot()
+function State.snapshot(includePrivate)
     local list = {}
     for _, business in pairs(State.businesses) do
+        local modules = business.modules
+        if includePrivate ~= true then
+            modules = {}
+            for index, module in ipairs(business.modules) do
+                local public = {}
+                for key, value in pairs(module) do
+                    if key ~= 'webhook' then public[key] = value end
+                end
+                modules[index] = public
+            end
+        end
         list[#list + 1] = {
             id = business.id, label = business.label, job = business.job,
-            modules = business.modules, rev = business.rev,
+            modules = modules, rev = business.rev,
         }
     end
     table.sort(list, function(a, b) return a.id < b.id end)

@@ -169,6 +169,10 @@ receives that job's as well, and a POS module may name a third URL of its own.
 All of it also lands in `qbjobcreator_logs` and in qblib's own event log
 regardless of whether any webhook is configured.
 
+Webhook URLs are omitted from client definitions and copied public module data.
+The admin data editor retrieves the full module after a server permission check,
+so unrelated edits retain its saved webhook. Server exports retain full definitions.
+
 ---
 
 ## Exports

@@ -370,8 +370,12 @@ end
 ---@param index integer
 ---@return boolean? saved
 local function editModuleData(business, index)
-    local module = business.modules[index]
-    if not module then return false end
+    -- Public definitions omit webhooks; editing needs the authorized full copy.
+    local module, err = QB.callback.trigger('qbjobcreator:server:module', business.id, index)
+    if not module then
+        Client.notify(err or 'That module no longer exists.', 'error')
+        return false
+    end
 
     local encoded = json.encode(module)
     local values = form({
@@ -672,7 +676,7 @@ local function appDefinition(state)
                             { label = 'Interaction', value = selectedModule and S.moduleType[selectedModule.moduleType].interaction or '—' },
                             { label = 'Access', value = selectedModule and (selectedModule.public and 'Public' or business.job) or '—' },
                         } },
-                        { type = 'text', title = 'Editing safely', text = 'Edit data changes a module in place and validates it before it goes live. Rebuild is for changing its placement. Copy buttons put the current JSON on your clipboard for backups or support.' },
+                        { type = 'text', title = 'Editing safely', text = 'Edit data changes a module in place and validates it before it goes live. Rebuild is for changing its placement. Copy buttons include public module data for backups or support; webhook URLs are omitted.' },
                     },
                 },
             }

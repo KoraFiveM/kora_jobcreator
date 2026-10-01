@@ -111,6 +111,15 @@ QB.callback.register('qbjobcreator:server:deleteBusiness', function(src, busines
     return true
 end, { rateLimit = { max = 5, window = 30000 } })
 
+---The creator edits a private copy so unrelated changes retain server-only fields.
+QB.callback.register('qbjobcreator:server:module', function(src, businessId, index)
+    local business, err = authorise(src, businessId, true)
+    if not business then return nil, err end
+    local module = State.module(business, index)
+    if not module then return nil, 'That module no longer exists.' end
+    return json.decode(json.encode(module))
+end, { rateLimit = { max = 10, window = 10000 } })
+
 ---Appends a module (`index` nil) or replaces one in place.
 QB.callback.register('qbjobcreator:server:saveModule', function(src, businessId, index, payload)
     local business, err = authorise(src, businessId, true)
@@ -176,7 +185,7 @@ end, { rateLimit = { max = 10, window = 10000 } })
 -- Exports for other resources
 -- ---------------------------------------------------------------------------
 
-exports('getBusinesses', function() return State.snapshot() end)
+exports('getBusinesses', function() return State.snapshot(true) end)
 exports('getBusiness', function(id) local business = State.get(id); return business and json.decode(json.encode(business)) or nil end)
 
 ---@param job string
