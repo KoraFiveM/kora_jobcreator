@@ -77,6 +77,7 @@ job.QB = {
         local result = {}; for _ = 1, options.rolls do result[#result + 1] = copy(pool[1]) end; return result
     end },
 }
+job.QB.sql.transaction = function() return not failWrite end
 local inventoryExports = {}
 for name, fn in pairs(native) do inventoryExports[name] = function(_, ...) return fn(...) end end
 local create = inventoryExports.createUseable

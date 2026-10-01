@@ -50,4 +50,5 @@ client_scripts {
 
 files {
     'sql/001_businesses.sql',
+    'sql/002_deleted.sql',
 }

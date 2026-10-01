@@ -222,8 +222,11 @@ end
 function State.remove(id)
     local business = State.get(id)
     if not business then return false, 'Unknown business.' end
-    local _, err = QB.sql.execute('DELETE FROM `qbjobcreator` WHERE `id` = ?', { id })
-    if err then return false, 'Could not delete the business.' end
+    local removed = QB.sql.transaction({
+        { sql = 'DELETE FROM `qbjobcreator` WHERE `id` = ?', params = { id } },
+        { sql = 'INSERT IGNORE INTO `qbjobcreator_deleted` (`id`) VALUES (?)', params = { id } },
+    })
+    if not removed then return false, 'Could not delete the business.' end
     QbJobCreator.register.removeBusiness(business)
     State.businesses[id] = nil
     State.broadcast()
@@ -236,6 +239,10 @@ end
 function State.load()
     local rows, err = QB.sql.query('SELECT `id`, `label`, `job`, `modules` FROM `qbjobcreator`')
     if err then return false, err end
+    local deletedRows, deletedErr = QB.sql.query('SELECT `id` FROM `qbjobcreator_deleted`')
+    if deletedErr then return false, deletedErr end
+    local deleted = {}
+    for _, row in ipairs(deletedRows or {}) do deleted[row.id] = true end
 
     State.businesses = {}
     for _, row in ipairs(rows or {}) do
@@ -273,11 +280,11 @@ function State.load()
 
     -- Seeded businesses themselves are first-boot only. An admin who deleted or
     -- moved a seeded till in-game must not have it silently resurrected on the
-    -- next restart, so the guard is on the business id existing at all, not on
-    -- its contents.
+    -- next restart. Deletion markers suppress automatic seeding; explicitly
+    -- recreating an id still loads its new business row normally.
     for _, seed in ipairs(Config.seeds or {}) do
         local id = S.slug(seed.id or seed.label)
-        if id and not State.businesses[id] then
+        if id and not State.businesses[id] and not deleted[id] then
             local seeded, seedErr = State.persist(seed)
             if seeded then print(('^2[qbjobcreator]^7 seeded business %s'):format(seeded.id))
             else print(('^1[qbjobcreator]^7 could not seed %s: %s'):format(tostring(id), tostring(seedErr))) end

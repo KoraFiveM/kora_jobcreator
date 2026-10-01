@@ -10,6 +10,6 @@ Config.shopItems = QB.config.map(Config.shopItems, QB.config.list({}, QB.config.
 })
 Config.seeds = QB.config.list(Config.seeds, QB.config.object({}), {
     label = 'First-boot business seeds',
-    description = 'Defines the ordered first-boot business definitions. Each row contains its own stable business ID; seeds are inserted only when the database has no row with that ID and never overwrite in-game edits, so changing an existing seed does not replace an already-created business.',
+    description = 'Defines the ordered first-boot business definitions. Each row contains its own stable business ID; seeds are inserted only when the database has no business or deletion marker with that ID and never overwrite in-game edits, so changing an existing seed does not replace an already-created business.',
 })
 Config = QB.config.adopt(Config)

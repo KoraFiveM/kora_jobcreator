@@ -1,7 +1,7 @@
 -- A worked example, and the seed mechanism's own documentation.
 --
 -- Seeds are FIRST-BOOT ONLY. The row is inserted if no business with this id
--- exists yet, and is never written again -- so anything an admin changes or
+-- exists yet and it has not been deleted in-game -- so anything an admin changes or
 -- deletes in-game stays changed or deleted across restarts. Delete this file if
 -- you would rather build everything from scratch with `/business`.
 --

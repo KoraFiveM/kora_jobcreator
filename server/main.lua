@@ -15,6 +15,7 @@ CreateThread(function()
 
     local _, err = QB.sql.migrateFiles(RESOURCE, {
         { version = 1, name = 'businesses', file = 'sql/001_businesses.sql' },
+        { version = 2, name = 'deleted', file = 'sql/002_deleted.sql' },
     })
     if err then return print(('^1[qbjobcreator]^7 migration failed: %s'):format(err)) end
 

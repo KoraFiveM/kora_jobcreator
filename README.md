@@ -149,7 +149,9 @@ optional skill adapter. Business *definitions* are not configured there.
 * `shared/shopitems/*.lua` — named item lists a till may reference. An entry
   with a `price` is fixed at that price; one without is employee-priced.
 * `shared/businesses/*.lua` — first-boot seeds. Inserted only when no business
-  with that id exists, so in-game edits and deletions always win. A seed may
+  with that id exists and it has not been deleted in-game. Deletion markers in
+  `qbjobcreator_deleted` prevent reseeding; admins can still explicitly recreate
+  the same id. In-game edits and deletions always win. A seed may
   also carry a `jobDefinition`, registered at boot when no job of that name
   exists yet — qbcore's job registry is in-memory, so this is re-checked every
   start, and a server that defines its own version of the job always wins.
@@ -191,6 +193,7 @@ exports.qbjobcreator:openBusinessMenu()
 | Table | Holds |
 |---|---|
 | `qbjobcreator` | One row per business: label, job, and its modules as JSON. |
+| `qbjobcreator_deleted` | Deleted business IDs, retained to prevent automatic reseeding. |
 | `qbjobcreator_prices` | Employee-set prices, remembered per till and item. |
 | `qbjobcreator_logs` | Sales, restocks, payments, crafts and admin edits. |
 
