@@ -25,7 +25,9 @@ local COLORS = {
 local function webhooksFor(business, moduleWebhook)
     local seen, urls = {}, {}
     local candidates = { moduleWebhook, Config.webhooks[business.job], Config.webhooks.default }
-    for _, url in ipairs(candidates) do
+    -- Optional entries leave holes that ipairs would stop at before the fallback.
+    for index = 1, 3 do
+        local url = candidates[index]
         if type(url) == 'string' and url ~= '' and not seen[url] then
             seen[url] = true
             urls[#urls + 1] = url
