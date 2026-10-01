@@ -158,8 +158,13 @@ end, { rateLimit = { max = 20, window = 10000 } })
 
 ---@param business table
 ---@param module table
-function Crafting.registerUseable(business, module)
+---@param binding? table
+function Crafting.registerUseable(business, module, binding)
+    binding = binding or { business = business, module = module }
     exports.qbinventory:createUseable(module.item, function(src)
+        -- Keep one item handler while edits replace its active definition.
+        local business, module = binding.business, binding.module
+        if not business or not module then return false end
         local consume = module.consume
         if consume > 0 and not exports.qbcore:removeItem(src, module.item, consume) then
             return QB.notify.send(src, { title = Config.notifyTitle, message = 'You do not have that.', type = 'error' })

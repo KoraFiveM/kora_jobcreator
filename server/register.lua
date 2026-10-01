@@ -17,7 +17,7 @@ local Crafting = QbJobCreator.crafting
 local Register = {}
 QbJobCreator.register = Register
 
----@type table<string, true> item names already bound to a use handler
+---@type table<string, table> item name -> current business/module binding
 local useables = {}
 
 ---@type table<string, table> stash id -> { businessId, module }
@@ -69,16 +69,27 @@ handlers.POS = Pos.register
 handlers.UseableItem = function(business, module)
     -- A use handler is global to an item name, so binding the same item twice
     -- would leave the second registration shadowing the first with no warning.
-    if useables[module.item] then
+    local binding = useables[module.item]
+    if binding and binding.business then
         print(('^3[qbjobcreator]^7 item "%s" already has a use handler; %s will not rebind it'):format(module.item, business.id))
         return
     end
-    useables[module.item] = true
-    Crafting.registerUseable(business, module)
+    if binding then
+        binding.business, binding.module = business, module
+        return
+    end
+    binding = { business = business, module = module }
+    useables[module.item] = binding
+    Crafting.registerUseable(business, module, binding)
 end
 
 ---@param business table
 function Register.removeBusiness(business)
+    for _, binding in pairs(useables) do
+        if binding.business and binding.business.id == business.id then
+            binding.business, binding.module = nil, nil
+        end
+    end
     -- Rebuild this business's registry slice so moved modules replace their old
     -- coordinate policy and removed stashes fail closed. Inventory contents are
     -- retained by qbinventory when an id is re-registered.
