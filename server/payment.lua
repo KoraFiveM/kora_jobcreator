@@ -37,9 +37,7 @@ end
 ---@param target integer
 ---@return boolean
 local function nearEachOther(src, target)
-    local a, b = GetPlayerPed(src), GetPlayerPed(target)
-    if a == 0 or b == 0 then return false end
-    return #(GetEntityCoords(a) - GetEntityCoords(b)) <= Config.payment.distance
+    return QB.world.resolveNearbyPlayer(src, target, { maxDistance = Config.payment.distance }) ~= nil
 end
 
 ---@param src integer
