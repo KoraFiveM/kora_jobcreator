@@ -1,6 +1,6 @@
 -- Client-realm invariants that are easy to regress and impossible to see.
 --
--- The hard one is threading. qblib's zone tick and qbtarget's target loop are
+-- The hard one is threading. kora_lib's zone tick and kora_target's target loop are
 -- SHARED across every resource that uses them, and both invoke callbacks this
 -- resource supplies. Yielding inside one of those callbacks -- which almost
 -- everything here does, since streaming a prop, opening a dialog and calling
@@ -44,9 +44,9 @@ local jobUpdate = main:match("RegisterNetEvent%('QBCore:Client:OnJobUpdate'.-\ne
 H.ok(jobUpdate and jobUpdate:find('CreateThread', 1, true),
     'the job-update handler does not call the server on the event thread')
 
--- --- no ox_lib in a qblib resource -----------------------------------------
+-- --- no ox_lib in a kora_lib resource -----------------------------------------
 --
--- `cache` and `lib` are ox_lib globals. qblib has neither, and referencing one
+-- `cache` and `lib` are ox_lib globals. kora_lib has neither, and referencing one
 -- is a nil index at the worst possible moment rather than a load error.
 for name, source in pairs({ business = business, main = main, creator = creator,
     payment = payment, state = state }) do
@@ -135,7 +135,7 @@ QbJobCreator = {
     },
     creator = { refresh = function() refreshes = refreshes + 1 end },
 }
-GetCurrentResourceName = function() return 'qbjobcreator' end
+GetCurrentResourceName = function() return 'kora_jobcreator' end
 RegisterNetEvent = function(name, callback) handlers[name] = callback end
 AddEventHandler = RegisterNetEvent
 CreateThread, exports = function() end, function() end
@@ -173,7 +173,7 @@ H.equal(#destroyed, 3, 'debug rebuild keeps its cleanup path')
 H.equal(#created, 4, 'debug rebuild creates one remaining business')
 handlers.onClientResourceStop('other')
 H.equal(#destroyed, 3, 'another resource stopping does not affect businesses')
-handlers.onClientResourceStop('qbjobcreator')
+handlers.onClientResourceStop('kora_jobcreator')
 H.equal(destroyed[4], created[4], 'stop cleans up the current replacement record')
 H.equal(stopping[4], true, 'stop retains the flag that skips extra server round trips')
 H.equal(leaveAll, 1, 'stop publishes presence cleanup once')

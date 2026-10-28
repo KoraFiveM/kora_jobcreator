@@ -5,7 +5,7 @@
 -- restart. The dialogs collect a module, the server validates and stores it, and
 -- the sync that comes back rebuilds the world.
 --
--- World anchors are never typed in. Zones come from qblib's in-world zone
+-- World anchors are never typed in. Zones come from kora_lib's in-world zone
 -- creator, props from its placement tool, and "use what is already there" from
 -- a camera raycast -- so a till sits exactly where the counter is.
 

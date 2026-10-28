@@ -71,18 +71,18 @@ function Crafting.craft(src, recipe, business)
     if #produced == 0 then return false, 'That recipe produces nothing.' end
 
     for _, ingredient in ipairs(needed) do
-        if exports.qbcore:getItemCount(src, ingredient.item) < ingredient.amount then
+        if exports.kora_core:getItemCount(src, ingredient.item) < ingredient.amount then
             return false, 'You are missing ingredients.'
         end
     end
 
     for _, product in ipairs(produced) do
-        if not exports.qbcore:canCarry(src, product.item, product.amount) then
+        if not exports.kora_core:canCarry(src, product.item, product.amount) then
             return false, 'You do not have room for that.'
         end
     end
 
-    local capacity, capacityErr = exports.qbinventory:CanCraftItems(src, needed, produced)
+    local capacity, capacityErr = exports.kora_inventory:CanCraftItems(src, needed, produced)
     if not capacity then
         if type(capacityErr) == 'string' and capacityErr:find('ingredient', 1, true) then
             return false, 'You are missing ingredients.'
@@ -93,10 +93,10 @@ function Crafting.craft(src, recipe, business)
     -- Retain the existing ingredient refund when a removal fails.
     local removed = {}
     for _, ingredient in ipairs(needed) do
-        local taken = exports.qbcore:removeItem(src, ingredient.item, ingredient.amount)
+        local taken = exports.kora_core:removeItem(src, ingredient.item, ingredient.amount)
         if not taken then
             for _, undo in ipairs(removed) do
-                exports.qbcore:addItem(src, undo.item, undo.amount, nil, undo.info)
+                exports.kora_core:addItem(src, undo.item, undo.amount, nil, undo.info)
             end
             return false, 'You are missing ingredients.'
         end
@@ -105,7 +105,7 @@ function Crafting.craft(src, recipe, business)
 
     local given = {}
     for _, product in ipairs(produced) do
-        local added = exports.qbcore:addItem(src, product.item, product.amount, nil, product.info)
+        local added = exports.kora_core:addItem(src, product.item, product.amount, nil, product.info)
         if not added then return false, 'You do not have room for that.' end
         given[#given + 1] = ('%dx %s'):format(product.amount, product.item)
     end
@@ -161,12 +161,12 @@ end, { rateLimit = { max = 20, window = 10000 } })
 ---@param binding? table
 function Crafting.registerUseable(business, module, binding)
     binding = binding or { business = business, module = module }
-    exports.qbinventory:createUseable(module.item, function(src)
+    exports.kora_inventory:createUseable(module.item, function(src)
         -- Keep one item handler while edits replace its active definition.
         local business, module = binding.business, binding.module
         if not business or not module then return false end
         local consume = module.consume
-        if consume > 0 and not exports.qbcore:removeItem(src, module.item, consume) then
+        if consume > 0 and not exports.kora_core:removeItem(src, module.item, consume) then
             return QB.notify.send(src, { title = Config.notifyTitle, message = 'You do not have that.', type = 'error' })
         end
 
@@ -184,7 +184,7 @@ function Crafting.registerUseable(business, module, binding)
             for _, reward in ipairs(rewards) do
                 local name = reward.item or reward.name
                 local amount = math.max(math.floor(tonumber(reward.amount) or 1), 1)
-                if name and exports.qbcore:addItem(src, name, amount) then
+                if name and exports.kora_core:addItem(src, name, amount) then
                     given[#given + 1] = ('%dx %s'):format(amount, name)
                 end
             end
@@ -195,7 +195,7 @@ function Crafting.registerUseable(business, module, binding)
         -- The item is refunded when the outcome failed, so a full inventory or a
         -- broken recipe never silently eats it.
         if not ok and consume > 0 then
-            exports.qbcore:addItem(src, module.item, consume)
+            exports.kora_core:addItem(src, module.item, consume)
         end
 
         QB.notify.send(src, {

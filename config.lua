@@ -1,4 +1,4 @@
--- qbjobcreator configuration.
+-- kora_jobcreator configuration.
 --
 -- Business DEFINITIONS are not configured here -- they live in the database and
 -- are built in-game (see `shared/businesses/` for optional first-boot seeds).
@@ -11,7 +11,7 @@ Config = {}
 Config.debug = false
 
 ---Permission required to create, edit or delete a business in-game.
----Checked with `exports.qbcore:hasPermission`.
+---Checked with `exports.kora_core:hasPermission`.
 Config.adminPermission = 'admin'
 
 ---Chat command that opens the job creator (admin) / the nearest business's
@@ -81,7 +81,7 @@ Config.skills = {
     ---@param skill string
     ---@return number
     getLevel = function(src, skill)
-        local skills = exports.qbcore:getMetaData(src, 'skills')
+        local skills = exports.kora_core:getMetaData(src, 'skills')
         local record = type(skills) == 'table' and skills[skill] or nil
         return type(record) == 'table' and tonumber(record.level) or tonumber(record) or 0
     end,
@@ -89,12 +89,12 @@ Config.skills = {
     ---@param skill string
     ---@param amount number
     addXp = function(src, skill, amount)
-        local skills = exports.qbcore:getMetaData(src, 'skills')
+        local skills = exports.kora_core:getMetaData(src, 'skills')
         if type(skills) ~= 'table' then skills = {} end
         local record = type(skills[skill]) == 'table' and skills[skill] or { level = 0, xp = 0 }
         record.xp = (tonumber(record.xp) or 0) + amount
         skills[skill] = record
-        exports.qbcore:setMetaData(src, 'skills', skills)
+        exports.kora_core:setMetaData(src, 'skills', skills)
     end,
 }
 

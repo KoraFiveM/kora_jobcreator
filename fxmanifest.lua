@@ -2,21 +2,23 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-name 'qbjobcreator'
+name 'kora_jobcreator'
+-- Keep the legacy resource name resolvable for exports['qbjobcreator'] callers.
+provide 'qbjobcreator'
 author 'qbcore2'
 version '1.0.0'
 description 'qblib-native in-game job and business creator'
 
-dependency 'qblib'
-dependency 'qbsql'
-dependency 'qbcore'
-dependency 'qbinventory'
-dependency 'qbtarget'
+dependency 'kora_lib'
+dependency 'kora_sql'
+dependency 'kora_core'
+dependency 'kora_inventory'
+dependency 'kora_target'
 
 shared_scripts {
-    '@qblib/init.lua',
-    '@qbsql/init.lua',
-    '@qbcore/init.lua',
+    '@kora_lib/init.lua',
+    '@kora_sql/init.lua',
+    '@kora_core/init.lua',
     'config.lua',
     'shared/schema.lua',
     'shared/recipes/*.lua',

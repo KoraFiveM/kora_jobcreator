@@ -1,5 +1,5 @@
 -- Focused runtime proof that restocking pays nothing and a commission can be
--- released only from qbinventory's post-commit purchase audit.
+-- released only from kora_inventory's post-commit purchase audit.
 local H = dofile('test/harness.lua')
 
 local business = { id = 'burgershot', label = 'Burger Shot', job = 'burgershot' }
@@ -32,7 +32,7 @@ GetEntityCoords = function() return { x = 0, y = 0, z = 0 } end
 vector3 = function(x, y, z) return { x = x, y = y, z = z } end
 
 exports = {
-    qbinventory = {
+    kora_inventory = {
         RegisterShop = function() return true end,
         RegisterStash = function() return true end,
         RegisterHook = function() return true end,
@@ -47,7 +47,7 @@ exports = {
         SetShopItems = function(_, _, items) shelfWritten = items; return true end,
         SetStashItems = function() return true end,
     },
-    qbcore = {
+    kora_core = {
         getPlayerData = function() return { citizenid = 'CID-STOCKER' } end,
         getPlayerByCitizenId = function(_, citizenid)
             return citizenid == 'CID-STOCKER' and { source = 41 } or nil
@@ -57,7 +57,7 @@ exports = {
             return true
         end,
     },
-    qbbossmenu = {
+    kora_bossmenu = {
         addBusinessMoney = function(_, job, amount, reason)
             accountOps[#accountOps + 1] = { action = 'credit', job = job, amount = amount, reason = reason }
             return true

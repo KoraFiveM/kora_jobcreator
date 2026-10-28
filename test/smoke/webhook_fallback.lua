@@ -10,7 +10,7 @@ local source = read(logsPath)
 local sqlRecords, logRecords, queued, httpRecords, embeds = {}, {}, {}, {}, {}
 local convarReads = 0
 QB = { util = {}, discord = {}, compat = { isCallable = function(value) return type(value) == 'function' end } }
-dofile('../qblib/modules/util/shared.lua')
+dofile('../kora_lib/modules/util/shared.lua')
 local clone = QB.util.deepClone
 local snapshots, nextToken = {}, 0
 json = {
@@ -27,7 +27,7 @@ PerformHttpRequest = function(url, callback, method, body, headers)
     httpRecords[#httpRecords + 1] = { url = url, method = method, body = json.decode(body), headers = clone(headers) }
     callback(204, '', {}, '')
 end
-dofile('../qblib/modules/discord/server.lua')
+dofile('../kora_lib/modules/discord/server.lua')
 local createEmbed, sendWebhook = QB.discord.createEmbed, QB.discord.sendWebhook
 QB.discord.createEmbed = function(options)
     local embed = createEmbed(options); embeds[#embeds + 1] = clone(embed); return embed
@@ -45,7 +45,7 @@ end }
 QB.logging = { event = function(name, src, values)
     logRecords[#logRecords + 1] = { name = name, src = src, values = clone(values) }
 end }
-exports = { qbcore = { getPlayerData = function(_, src)
+exports = { kora_core = { getPlayerData = function(_, src)
     if src == 1 then return { citizenid = 'SYNTH001', name = 'unknown', charinfo = { firstname = 'Fixture', lastname = 'Person' } } end
 end } }
 Config = { webhooks = {}, logs = { retain = 50 } }

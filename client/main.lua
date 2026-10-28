@@ -58,7 +58,7 @@ RegisterNetEvent('qbjobcreator:client:staff', function(counts)
     Creator.refresh()
 end)
 
----Rebuild local world handles so qbtarget/qblib pick up an administrator's
+---Rebuild local world handles so kora_target/qblib pick up an administrator's
 ---debug-visualisation preference. This is intentionally client-local: debug
 ---outlines are a troubleshooting aid, not shared business data.
 ---@param value boolean
@@ -75,7 +75,7 @@ end
 ---A job change does not move any zone, but it does change what the player may
 ---see and whether they should be clocked in where they are standing.
 RegisterNetEvent('QBCore:Client:OnJobUpdate', function()
-    -- qbcore can emit the compatibility job event more than once for one
+    -- kora_core can emit the compatibility job event more than once for one
     -- replicated change. Presence only depends on the job name, so repeating
     -- the same transition would send identical enter/leave callbacks for every
     -- business the player is standing in and eventually trip their rate limit.

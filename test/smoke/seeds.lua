@@ -70,7 +70,7 @@ H.ok(#Config.seeds > 0, 'seeds were registered')
 
 for _, seed in ipairs(Config.seeds) do
     -- A seed may ship the job it needs. If it does, that definition has to be
-    -- something qbcore's registry will actually accept -- a job with no boss
+    -- something kora_core's registry will actually accept -- a job with no boss
     -- grade produces a business nobody can ever manage.
     if seed.jobDefinition then
         local definition = seed.jobDefinition

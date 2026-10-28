@@ -34,9 +34,9 @@ end
 
 ---@return table job
 function Client.job()
-    -- The path is an ARRAY of keys, not a dotted string: qbcore walks it with
+    -- The path is an ARRAY of keys, not a dotted string: kora_core walks it with
     -- `for i = 1, #path`, so a bare string silently resolves to nil.
-    local data = exports.qbcore:getPlayerData({ 'job' })
+    local data = exports.kora_core:getPlayerData({ 'job' })
     return type(data) == 'table' and data or {}
 end
 

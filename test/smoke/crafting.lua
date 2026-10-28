@@ -1,2 +1,2 @@
 -- The regression loads all three real server resources; keep one shared copy.
-dofile('../qbinventory/test/smoke/craft_capacity.lua')
+dofile('../kora_inventory/test/smoke/craft_capacity.lua')

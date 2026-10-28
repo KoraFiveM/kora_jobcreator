@@ -1,4 +1,4 @@
--- Server-only qbjobcreator configuration.
+-- Server-only kora_jobcreator configuration.
 --
 -- Do not move these settings into ../config.lua: shared scripts are downloaded
 -- by every client, which would disclose webhook credentials.
@@ -9,7 +9,7 @@ Config.webhooks = {
     default = '',
 }
 
--- Webhook URLs are server-only credentials. Register the branch so qblib
+-- Webhook URLs are server-only credentials. Register the branch so kora_lib
 -- knows it exists, but explicitly withhold it from the in-game editor and all
 -- client snapshots.
 if QB and QB.config and QB.config.extend then

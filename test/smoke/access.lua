@@ -10,10 +10,10 @@ local players = {
 
 QbJobCreator = { schema = {} }
 Config = { duty = { enabled = true } }
-GetCurrentResourceName = function() return 'qbjobcreator' end
+GetCurrentResourceName = function() return 'kora_jobcreator' end
 GetPlayerPed = function(src) return players[src] and src or 0 end
 exports = {
-    qbcore = {
+    kora_core = {
         getPlayerData = function(_, src) return players[src] end,
         setJobDuty = function(_, src, value) players[src].job.onduty = value; return true end,
     },

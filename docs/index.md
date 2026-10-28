@@ -1,4 +1,4 @@
-# qbjobcreator module reference
+# kora_jobcreator module reference
 
 Every module shares a common shape, then adds its own fields. All of it is
 plain JSON — no vectors, no functions — because a definition travels from MySQL
@@ -13,7 +13,7 @@ to the server to every client.
 | `icon` | string | Lucide icon key. |
 | `public` | boolean | Drops the job lock on this module's target options. |
 | `distance` | number | Interaction distance, 0.5–20. Defaults to 2.0. |
-| `blip` | table | `{ enabled, category, name?, sprite, color, scale, display, shortRange, coords? }`. `category` defaults to `Business`; qblib renders `Category: Name` when a specific location/storefront name is present. Falls back to the module's own anchor when `coords` is omitted. Legacy persisted `label` values are accepted as `name`. |
+| `blip` | table | `{ enabled, category, name?, sprite, color, scale, display, shortRange, coords? }`. `category` defaults to `Business`; kora_lib renders `Category: Name` when a specific location/storefront name is present. Falls back to the module's own anchor when `coords` is omitted. Legacy persisted `label` values are accepted as `name`. |
 
 ## Anchors
 
@@ -52,7 +52,7 @@ The in-game creator obtains its category select from
 Entity anchor only. No interaction.
 
 ### `BossMenu`
-Either anchor. Opens `qbbossmenu` for a boss of this job; invisible to everyone
+Either anchor. Opens `kora_bossmenu` for a boss of this job; invisible to everyone
 else.
 
 ### `POS` — a till
@@ -65,7 +65,7 @@ Either anchor.
 | `commission` | 0–100. Percent of committed sale revenue paid to the online employee who stocked that batch. Stocking alone never pays. |
 | `tax` | 0–100. Percent of each sale withheld from the business account. |
 | `hideWhenStaffed` | Customers cannot self-serve while an employee is inside the business. |
-| `panicButton` | Adds a silent alarm option, routed through `qbdispatch`. |
+| `panicButton` | Adds a silent alarm option, routed through `kora_dispatch`. |
 | `currency` | `cash` or `bank`. |
 | `shopSlots`, `stockSlots` | Shelf and intake stash sizes. |
 | `webhook` | A Discord URL for this till specifically, on top of the business's own. |
@@ -142,7 +142,7 @@ Config.seeds[#Config.seeds + 1] = {
 ```
 
 The **business** is inserted only when no row with that id exists — deleting or
-editing it in-game always wins. The **job** is a separate matter: qbcore's job
+editing it in-game always wins. The **job** is a separate matter: kora_core's job
 registry is in-memory and rebuilt from its own seed files each start, so it is
 re-checked on every boot and registered whenever the name is absent. A server
 that defines its own `burgershot` keeps it.

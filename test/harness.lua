@@ -1,11 +1,11 @@
--- Tiny assert/report framework shared by every qbjobcreator smoke test.
+-- Tiny assert/report framework shared by every kora_jobcreator smoke test.
 --
 -- A failing assertion raises rather than counting, so a broken invariant stops
 -- the file it is in instead of cascading misleading failures behind it. run.sh
 -- compares the suite header count against the reported count, so a file that
 -- dies mid-load is still visible.
 
-local H = { passed = 0, failed = 0, name = 'qbjobcreator' }
+local H = { passed = 0, failed = 0, name = 'kora_jobcreator' }
 
 function H.equal(actual, expected, message)
     if actual ~= expected then

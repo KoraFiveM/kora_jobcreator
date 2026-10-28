@@ -225,7 +225,7 @@ local function normaliseBlip(raw)
         display = int(raw.display, 0, 11) or 4,
         category = category,
         -- `label` is the pre-category/name field used by persisted definitions
-        -- from before qblib composed display labels itself.
+        -- from before kora_lib composed display labels itself.
         name = str(raw.name, 64) or str(raw.label, 64),
         shortRange = raw.shortRange ~= false,
         coords = S.coords(raw.coords),

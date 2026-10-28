@@ -157,7 +157,7 @@ QB.callback.register('qbjobcreator:server:setDuty', function(src, businessId, on
     local job = State.playerJob(src)
     if not job or job.onduty == (onDuty == true) then return false end
 
-    local ok, err = exports.qbcore:setJobDuty(src, onDuty == true)
+    local ok, err = exports.kora_core:setJobDuty(src, onDuty == true)
     if not ok then return false, err end
     if onDuty ~= true then forget(src) end
     QB.notify.send(src, {

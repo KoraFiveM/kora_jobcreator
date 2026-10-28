@@ -1,4 +1,4 @@
--- The business registry: the in-memory mirror of the `qbjobcreator` table, the
+-- The business registry: the in-memory mirror of the `kora_jobcreator` table, the
 -- persistence funnel every mutation goes through, and the replication to
 -- clients.
 --
@@ -47,7 +47,7 @@ QbJobCreator.decode = decode
 ---@param src integer
 ---@return table|nil
 function State.playerJob(src)
-    local data = exports.qbcore:getPlayerData(src)
+    local data = exports.kora_core:getPlayerData(src)
     return data and data.job or nil
 end
 
@@ -61,7 +61,7 @@ end
 ---@param src integer
 ---@return boolean
 function State.isAdmin(src)
-    return exports.qbcore:hasPermission(src, Config.adminPermission) == true
+    return exports.kora_core:hasPermission(src, Config.adminPermission) == true
 end
 
 ---True when `src` works this job at all (any grade).
@@ -108,7 +108,7 @@ end
 ---@param module table
 ---@return boolean
 function State.nearModule(src, module)
-    if not exports.qbcore:getPlayerData(src) or GetPlayerPed(src) == 0 then return false end
+    if not exports.kora_core:getPlayerData(src) or GetPlayerPed(src) == 0 then return false end
     local coords, distance = State.moduleBoundary(module)
     for _, point in ipairs(coords) do
         local ok, nearby = pcall(QB.distance.player, src, point, tonumber(point.distance) or distance)
@@ -128,7 +128,7 @@ function State.nearBusiness(src, business)
 end
 
 ---Shared employee boundary for presence, automatic duty, and fixture actions.
----The job and duty values always come from qbcore, and the position always comes
+---The job and duty values always come from kora_core, and the position always comes
 ---from the server ped; the client supplies only which known business it means.
 ---@param src integer
 ---@param business table
@@ -275,7 +275,7 @@ function State.load()
     -- a server whose job list has never heard of it and sits there inert: no
     -- grade means no boss, and the job lock matches nobody.
     --
-    -- This runs EVERY boot, unlike the business insert below. qbcore's shared
+    -- This runs EVERY boot, unlike the business insert below. kora_core's shared
     -- registries are in-memory and rebuilt from its own seed files each start,
     -- so registering once alongside the first business insert would leave the
     -- job missing on every subsequent boot. The `not jobDefinition` guard is
@@ -284,7 +284,7 @@ function State.load()
     for _, seed in ipairs(Config.seeds or {}) do
         local job = type(seed.job) == 'string' and seed.job:lower() or nil
         if seed.jobDefinition and job and not State.jobDefinition(job) then
-            local ok, err = exports.qbcore:registerShared('jobs', job, seed.jobDefinition)
+            local ok, err = exports.kora_core:registerShared('jobs', job, seed.jobDefinition)
             if ok then print(('^2[qbjobcreator]^7 registered seed job %s'):format(job))
             else print(('^3[qbjobcreator]^7 could not register seed job %s: %s'):format(job, tostring(err))) end
         end

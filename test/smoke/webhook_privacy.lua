@@ -20,7 +20,7 @@ local adminAllowed = true
 local players = { [1] = { job = { name = 'shop', grade = { level = 0 } } },
     [2] = { job = { name = 'shop', grade = { level = 1 } } },
     [3] = { job = { name = 'police', grade = { level = 0 } } } }
-server.GetCurrentResourceName = function() return 'qbjobcreator' end
+server.GetCurrentResourceName = function() return 'kora_jobcreator' end
 server.GetResourceState = function() return 'stopped' end
 server.GetPlayerPed = function(src) return src end
 server.json = codec
@@ -42,7 +42,7 @@ server.QbJobCreator = {
     register = { business = noop, removeBusiness = noop }, staff = { counts = function() return {} end },
     logs = { record = noop, recent = function() return {} end },
 }
-server.exports = setmetatable({ qbcore = {
+server.exports = setmetatable({ kora_core = {
     getPlayerData = function(_, src) return players[src] end,
     hasPermission = function(_, src) return src == 1 and adminAllowed end,
 } }, { __call = function(_, name, handler) registered[name] = handler end })
@@ -51,7 +51,7 @@ server.TriggerClientEvent = function(name, target, payload)
     if (target == -1 or target == currentClient) and clientHandlers[name] then clientHandlers[name](copy(payload)) end
 end
 local function load(path, env) assert(loadfile(path, 't', env))() end
-load('../qblib/modules/util/shared.lua', server)
+load('../kora_lib/modules/util/shared.lua', server)
 load('config.lua', server); load('shared/schema.lua', server)
 load(resource .. '/server/state.lua', server); load(resource .. '/server/admin.lua', server)
 local State = server.QbJobCreator.state
@@ -109,7 +109,7 @@ client.QB = {
         end,
     },
 }
-client.exports = setmetatable({ qbcore = { getPlayerData = function() return players[currentClient].job end } },
+client.exports = setmetatable({ kora_core = { getPlayerData = function() return players[currentClient].job end } },
     { __call = function(_, name, handler) registered['client:' .. name] = handler end })
 client.QbJobCreator = { schema = server.QbJobCreator.schema, Business = { create = function() return {} end, destroy = noop } }
 load('client/state.lua', client); load(resource .. '/client/creator.lua', client); load('client/main.lua', client)

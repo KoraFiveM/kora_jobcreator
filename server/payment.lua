@@ -51,7 +51,7 @@ function Payment.request(src, target)
 
     target = math.floor(tonumber(target) or 0)
     if target <= 0 or target == src then return false, 'Pick someone else.' end
-    if not exports.qbcore:getPlayerData(target) then return false, 'That player is not around.' end
+    if not exports.kora_core:getPlayerData(target) then return false, 'That player is not around.' end
     if not nearEachOther(src, target) then return false, 'They are too far away.' end
 
     inFlight[src] = true
@@ -72,22 +72,22 @@ function Payment.request(src, target)
 
         if not nearEachOther(src, target) then return false, 'They walked away.' end
 
-        local paid, payErr = exports.qbcore:removeMoney(target, Config.payment.account, amount, 'qbjobcreator-card-payment')
+        local paid, payErr = exports.kora_core:removeMoney(target, Config.payment.account, amount, 'qbjobcreator-card-payment')
         if not paid then return false, payErr or 'Their payment was declined.' end
 
         local commission = math.floor(amount * Config.payment.commission)
         local toBusiness = amount - commission
 
         if commission > 0 then
-            exports.qbcore:addMoney(src, 'bank', commission, 'qbjobcreator-payment-commission')
+            exports.kora_core:addMoney(src, 'bank', commission, 'qbjobcreator-payment-commission')
         end
 
         local credited, creditErr = Pos.credit(business.job, toBusiness, 'card payment')
         if not credited then
             -- The business account is unreachable, and the employee is not
             -- allowed to keep the difference, so the customer is made whole.
-            exports.qbcore:addMoney(target, Config.payment.account, amount, 'qbjobcreator-card-refund')
-            if commission > 0 then exports.qbcore:removeMoney(src, 'bank', commission, 'qbjobcreator-payment-rollback') end
+            exports.kora_core:addMoney(target, Config.payment.account, amount, 'qbjobcreator-card-refund')
+            if commission > 0 then exports.kora_core:removeMoney(src, 'bank', commission, 'qbjobcreator-payment-rollback') end
             return false, creditErr or 'The business account is unavailable.'
         end
 

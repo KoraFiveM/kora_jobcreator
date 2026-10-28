@@ -23,7 +23,7 @@ QB = {
         eq(type(options.rateLimit), 'table', 'real callbacks keep rate limits')
     end },
 }
-dofile('../qblib/modules/util/shared.lua')
+dofile('../kora_lib/modules/util/shared.lua')
 local clone = QB.util.deepClone
 local encoded = {}
 local function stable(value)
@@ -70,7 +70,7 @@ local function driverQuery(_, sql, ...)
 end
 local function driverMigrate(_, resource, migrations, callback)
     startupOrder[#startupOrder + 1] = 'migrate'
-    eq(resource, 'qbjobcreator', 'actual main preserves migration resource name')
+    eq(resource, 'kora_jobcreator', 'actual main preserves migration resource name')
     eq(#migrations, 2, 'actual main registers both schema migrations')
     eq(migrations[1].version, 1, 'original migration version preserved')
     eq(migrations[1].checksum, QB.util.fnv1a(migrations[1].sql), 'actual migrateFiles computes original migration checksum')
@@ -102,9 +102,9 @@ local function driverTransaction(_, queries, ...)
     callback(true)
 end
 exports = setmetatable({
-    qbsql = { query = driverQuery, execute = driverExecute, transaction = driverTransaction,
+    kora_sql = { query = driverQuery, execute = driverExecute, transaction = driverTransaction,
         isReady = function() return true end, migrate = driverMigrate },
-    qbcore = {
+    kora_core = {
         hasPermission = function(_, src, permission) return src == 1 and permission == 'admin' end,
         registerShared = function(_, registry, name, value)
             eq(registry, 'jobs', 'seed job registry name is unchanged')
@@ -112,7 +112,7 @@ exports = setmetatable({
         end,
         getPlayerData = function() return nil end,
     },
-    qbinventory = {
+    kora_inventory = {
         RegisterStash = function(_, id, label, slots, weight, owner, groups, coords, distance)
             registrations[id] = { label = label, coords = clone(coords), distance = distance }
         end,
@@ -129,10 +129,10 @@ Citizen = { Await = function(p)
     if p.err then error(p.err, 0) end
     return p.value
 end }
-dofile('../qbsql/init.lua')
-GetCurrentResourceName = function() return 'qbjobcreator' end
+dofile('../kora_sql/init.lua')
+GetCurrentResourceName = function() return 'kora_jobcreator' end
 LoadResourceFile = function(resource, path)
-    eq(resource, 'qbjobcreator', 'actual migrateFiles reads from owning resource')
+    eq(resource, 'kora_jobcreator', 'actual migrateFiles reads from owning resource')
     return read(root .. path)
 end
 RegisterNetEvent = function() end
@@ -208,7 +208,7 @@ eq(#exported.getBusinesses(), 0, 'deleted seed absent from public snapshot')
 eq(exported.getBusiness('burgershot'), nil, 'deleted seed absent from individual public export')
 eq(logs[#logs].entry.message, 'Deleted business Edited in game.', 'existing admin audit contract unchanged')
 eq(rows.burgershot, nil, 'successful delete preserves original hard-delete row semantics')
-jobs = {} -- Model qbcore restarting with the resource: job registrations are volatile.
+jobs = {} -- Model kora_core restarting with the resource: job registrations are volatile.
 State = boot()
 eq(State.get('burgershot') ~= nil, false, 'deleted seed must remain absent after fresh module load')
 eq(type(jobs.burgershot), 'table', 'seed jobs are re-registered independently on later boots')

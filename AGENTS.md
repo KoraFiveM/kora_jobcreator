@@ -1,4 +1,4 @@
-# qbjobcreator agent guide
+# kora_jobcreator agent guide
 
 Modular businesses stored in MySQL and edited in-game. See `README.md` for what
 it does and `docs/index.md` for the module reference. This file is about how to
@@ -45,8 +45,8 @@ callback starts accepting a table of gameplay values, that is a bug.
 open a dialog or move money. `test/smoke/security.lua` counts registrations
 against limits and fails if the two ever diverge.
 
-**Shop stock belongs to qbinventory.** This resource owns pricing policy and
-who may open what; qbinventory owns the shelf and persists it. Do not add a
+**Shop stock belongs to kora_inventory.** This resource owns pricing policy and
+who may open what; kora_inventory owns the shelf and persists it. Do not add a
 stock table here — `test/smoke/contract.lua` fails if one appears.
 
 **Fixture access is server-bound.** Register stash, stock and shop inventories
@@ -112,12 +112,12 @@ running server. Update them in the same change as the code.
 
 ## Sibling-resource additions this build needed
 
-* `qbinventory`: `shopGet`/`shopSet` (`GetShopItems`/`SetShopItems`). Shop stock
+* `kora_inventory`: `shopGet`/`shopSet` (`GetShopItems`/`SetShopItems`). Shop stock
   could be seeded at registration and never changed afterwards — `RegisterShop`
   only seeds a shop that was not restored, and the transfer path refuses shop
   inventories outright.
-* `qbbossmenu`: `removeBusinessMoney`, the mirror of `addBusinessMoney`, so a
+* `kora_bossmenu`: `removeBusinessMoney`, the mirror of `addBusinessMoney`, so a
   sold-stock commission can be paid from revenue only after a committed sale.
-* `qbbossmenu`: its `openStash` callback called `exports.qbinventory:openInventory`,
+* `kora_bossmenu`: its `openStash` callback called `exports.kora_inventory:openInventory`,
   which is a **client-realm** export — the server realm has `OpenInventory` and
   `stashOpen`. Fixed to `stashOpen`.

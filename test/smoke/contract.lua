@@ -22,11 +22,11 @@ for _, file in ipairs(clientFiles) do client = client .. read(file) end
 
 -- --- manifest --------------------------------------------------------------
 
-for _, dependency in ipairs({ 'qblib', 'qbsql', 'qbcore', 'qbinventory', 'qbtarget' }) do
+for _, dependency in ipairs({ 'kora_lib', 'kora_sql', 'kora_core', 'kora_inventory', 'kora_target' }) do
     H.ok(manifest:find(("dependency '%s'"):format(dependency), 1, true), 'depends on ' .. dependency)
 end
-H.ok(manifest:find("'@qblib/init.lua'", 1, true), 'loads the qblib mirror')
-H.ok(manifest:find("'@qbcore/init.lua'", 1, true), 'loads the qbcore mirror')
+H.ok(manifest:find("'@kora_lib/init.lua'", 1, true), 'loads the qblib mirror')
+H.ok(manifest:find("'@kora_core/init.lua'", 1, true), 'loads the qbcore mirror')
 H.ok(manifest:find("'shared/schema.lua'", 1, true), 'the schema is shared by both realms')
 H.ok(manifest:find("'config.lua',", 1, true), 'config loads before the shared files that append to it')
 H.ok(manifest:find('sql/001_businesses.sql', 1, true), 'the migration is a packaged file')
@@ -87,11 +87,11 @@ for _, name in ipairs({ 'getBusinesses', 'openBusinessMenu' }) do
     H.ok(client:find(("exports('%s'"):format(name), 1, true), ('client export %s'):format(name))
 end
 
--- qbbossmenu is optional at runtime, but every method invoked through its
+-- kora_bossmenu is optional at runtime, but every method invoked through its
 -- dynamic export proxy must still exist in the corresponding realm. Read the
 -- sibling source so a provider rename fails this consumer's suite immediately.
-local bossMenuClient = read('../qbbossmenu/client/main.lua')
-local bossMenuServer = read('../qbbossmenu/server/main.lua')
+local bossMenuClient = read('../kora_bossmenu/client/main.lua')
+local bossMenuServer = read('../kora_bossmenu/server/main.lua')
 for _, name in ipairs({ 'openBossMenu' }) do
     H.ok(client:find(('bossMenu:%s('):format(name), 1, true), ('client calls qbbossmenu:%s'):format(name))
     H.ok(bossMenuClient:find(("exports('%s'"):format(name), 1, true),
@@ -110,13 +110,13 @@ H.ok(server:find('---@type QBBossMenuBalanceExports', 1, true), 'balance proxy h
 --
 -- Every optional dependency must be probed before use: this resource has to
 -- start on a server that runs neither a boss menu nor a dispatch system.
-for _, resource in ipairs({ 'qbbossmenu', 'qbdispatch' }) do
+for _, resource in ipairs({ 'kora_bossmenu', 'kora_dispatch' }) do
     H.nope(manifest:find(("dependency '%s'"):format(resource), 1, true), resource .. ' is optional')
     H.ok(server:find(("GetResourceState('%s')"):format(resource), 1, true),
         ('%s is probed before it is called'):format(resource))
 end
 
--- Shop stock lives in qbinventory, not in a second table here: two records of
+-- Shop stock lives in kora_inventory, not in a second table here: two records of
 -- the same shelf is exactly the bug this design exists to avoid.
 H.ok(server:find('GetShopItems', 1, true) and server:find('SetShopItems', 1, true),
     'shop stock is read and written through qbinventory')
@@ -127,9 +127,9 @@ for _, name in ipairs(tables) do
     H.nope(name:find('stock', 1, true), ('%s is not a second record of the shelf'):format(name))
 end
 
--- --- qbcore call shapes ----------------------------------------------------
+-- --- kora_core call shapes ----------------------------------------------------
 --
--- Two of qbcore's reads take shapes that fail SILENTLY when you get them wrong:
+-- Two of kora_core's reads take shapes that fail SILENTLY when you get them wrong:
 -- `getPlayerData`'s path is an array of keys (a bare string walks a string and
 -- resolves to nil), and `QB.shared.all` returns a dense array of records whose
 -- key lives on the record as `.name` (pairs() over it yields integers).

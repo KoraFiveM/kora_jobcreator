@@ -62,12 +62,12 @@ end
 ---The card machine works anywhere, on anyone -- it is an item, not a fixture,
 ---so it is registered once globally rather than per business.
 CreateThread(function()
-    exports.qbtarget:addGlobalType('player', { {
+    exports.kora_target:addGlobalType('player', { {
         label = 'Take a payment',
         icon = 'CreditCard',
         distance = Config.payment.distance,
         canInteract = function(entity)
-            if not exports.qbinventory:HasItem(Config.payment.item) then return false end
+            if not exports.kora_inventory:HasItem(Config.payment.item) then return false end
             return NetworkGetPlayerIndexFromPed(entity) ~= -1
         end,
         onSelect = function(entity)

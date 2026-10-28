@@ -15,7 +15,7 @@ Config.seeds[#Config.seeds + 1] = {
     job = 'burgershot',
 
     -- Optional, and seed-only: the job this business needs, registered at boot
-    -- if -- and ONLY if -- no job by that name exists yet. Stock qbcore ships
+    -- if -- and ONLY if -- no job by that name exists yet. Stock kora_core ships
     -- police, ambulance, mechanic and tow; without this a shipped example would
     -- land on a job list that has never heard of it and sit there inert, with
     -- no grades to make anyone a boss and a job lock matching nobody. A server

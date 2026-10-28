@@ -1,7 +1,7 @@
 -- Point of sale: the customer-facing shop, the employee-facing intake stash,
 -- pricing policy, and where the money from a sale ends up.
 --
--- Stock itself is NOT stored by this resource. qbinventory already owns a shop
+-- Stock itself is NOT stored by this resource. kora_inventory already owns a shop
 -- inventory and persists it durably, so duplicating it here would create two
 -- sources of truth for the same shelf. What this file owns is policy: which
 -- items a till accepts, what they cost, who may open it, and the payout split.
@@ -120,7 +120,7 @@ Pos.loadPrices = loadPrices
 -- ---------------------------------------------------------------------------
 
 local function bossMenuReady()
-    return GetResourceState('qbbossmenu') == 'started'
+    return GetResourceState('kora_bossmenu') == 'started'
 end
 
 ---@param job string
@@ -132,7 +132,7 @@ function Pos.credit(job, amount, reason)
     if amount <= 0 then return true end
     if not bossMenuReady() then return false, 'no business account resource is running' end
     ---@type QBBossMenuLedgerExports
-    local bossMenu = exports.qbbossmenu
+    local bossMenu = exports.kora_bossmenu
     return bossMenu:addBusinessMoney(job, amount, reason)
 end
 
@@ -145,7 +145,7 @@ function Pos.debit(job, amount, reason)
     if amount <= 0 then return true end
     if not bossMenuReady() then return false, 'no business account resource is running' end
     ---@type QBBossMenuLedgerExports
-    local bossMenu = exports.qbbossmenu
+    local bossMenu = exports.kora_bossmenu
     return bossMenu:removeBusinessMoney(job, amount, reason)
 end
 
@@ -179,7 +179,7 @@ function Pos.resetBusiness(businessId)
     for id, record in pairs(shops) do
         if record.businessId == businessId then
             local business = State.get(businessId)
-            exports.qbinventory:RegisterStash(stockId(id), (record.module.label or (business and business.label) or id) .. ' Stock',
+            exports.kora_inventory:RegisterStash(stockId(id), (record.module.label or (business and business.label) or id) .. ' Stock',
                 record.module.stockSlots, Config.pos.stockWeight, false,
                 business and { [business.job] = 0 } or {}, {}, record.distance)
             shops[id] = nil
@@ -226,7 +226,7 @@ function Pos.register(business, module)
         return true
     end
 
-    exports.qbinventory:RegisterShop(module.id, {
+    exports.kora_inventory:RegisterShop(module.id, {
         label = record.module.label or business.label,
         slots = record.module.shopSlots,
         maxWeight = Config.pos.shopWeight,
@@ -238,7 +238,7 @@ function Pos.register(business, module)
 
     -- Job-locked: the intake stash is where unsold company goods sit, so it is
     -- staff-only regardless of the till's own `public` flag.
-    exports.qbinventory:RegisterStash(stockId(module.id), (record.module.label or business.label) .. ' Stock',
+    exports.kora_inventory:RegisterStash(stockId(module.id), (record.module.label or business.label) .. ' Stock',
         record.module.stockSlots, Config.pos.stockWeight, false, { [business.job] = 0 },
         record.coords, record.distance)
 end
@@ -310,11 +310,11 @@ function Pos.intake(src, shopId)
     if not allowed then return end
     -- Closing an inventory by disconnecting also fires sessionClosed. Asking a
     -- player who is gone for a price would just burn the callback timeout.
-    local player = exports.qbcore:getPlayerData(src)
+    local player = exports.kora_core:getPlayerData(src)
     if not player then return end
     local stocker = type(player.citizenid) == 'string' and player.citizenid or nil
 
-    local staged = exports.qbinventory:GetStashItems(stockId(shopId)) or {}
+    local staged = exports.kora_inventory:GetStashItems(stockId(shopId)) or {}
     if not next(staged) then return end
 
     intaking[shopId] = true
@@ -342,8 +342,8 @@ function Pos.intake(src, shopId)
     end
 
     -- No yields past this point until the move is committed.
-    local remaining = exports.qbinventory:GetStashItems(stockId(shopId)) or {}
-    local shelf = exports.qbinventory:GetShopItems(shopId) or {}
+    local remaining = exports.kora_inventory:GetStashItems(stockId(shopId)) or {}
+    local shelf = exports.kora_inventory:GetShopItems(shopId) or {}
     local moved, commissionBase = {}, 0
 
     for slot, item in pairs(remaining) do
@@ -356,7 +356,7 @@ function Pos.intake(src, shopId)
                     name = item.name,
                     amount = (existing and existing.amount or 0) + item.amount,
                     info = item.info, price = price,
-                    -- Durable, server-only attribution. qbinventory strips this
+                    -- Durable, server-only attribution. kora_inventory strips this
                     -- from views and purchased item metadata, but returns it in
                     -- the committed purchase audit for post-sale commission.
                     serverData = existing and existing.serverData or {
@@ -378,14 +378,14 @@ function Pos.intake(src, shopId)
         return
     end
 
-    local ok, err = exports.qbinventory:SetShopItems(shopId, shelf)
+    local ok, err = exports.kora_inventory:SetShopItems(shopId, shelf)
     if not ok then
         intaking[shopId] = nil
         QB.notify.send(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
         print(('^3[qbjobcreator]^7 could not stock %s: %s'):format(shopId, tostring(err)))
         return
     end
-    local cleared, clearErr = exports.qbinventory:SetStashItems(stockId(shopId), remaining)
+    local cleared, clearErr = exports.kora_inventory:SetStashItems(stockId(shopId), remaining)
     if not cleared then
         -- The shelf already has the goods, so leaving them in the stash too
         -- would duplicate them. Nothing can undo the shelf write from here;
@@ -431,7 +431,7 @@ end)
 
 ---Instant feedback at drag time for an item the till will never accept, so an
 ---employee is not left wondering why it stayed in the stash.
-exports.qbinventory:RegisterHook('swapItems', function(payload)
+exports.kora_inventory:RegisterHook('swapItems', function(payload)
     local shopId = shopIdFromStockKey(payload.toInventory)
     if not shopId then return end
     if Pos.accepts(shopId, payload.itemName) then return end
@@ -442,7 +442,7 @@ end, { typeFilter = { stash = true } })
 -- Sales
 -- ---------------------------------------------------------------------------
 
----Sales are credited from qbinventory's own post-commit audit event, not from a
+---Sales are credited from kora_inventory's own post-commit audit event, not from a
 ---`buyItem` hook: a hook fires BEFORE the purchase is locked and committed, so
 ---crediting there would pay the business for a sale that could still fail on
 ---weight, funds or a stale revision.
@@ -460,7 +460,7 @@ AddEventHandler('qbinventory:server:audit', function(action, src, details)
         print(('^3[qbjobcreator]^7 could not credit %s for a sale: %s'):format(business.job, tostring(err)))
     end
 
-    -- Commission is released only after qbinventory has committed payment,
+    -- Commission is released only after kora_inventory has committed payment,
     -- stock removal and item delivery. Attribution is server-only data attached
     -- at intake, never an employee-supplied price or a client field.
     local commission = 0
@@ -468,11 +468,11 @@ AddEventHandler('qbinventory:server:audit', function(action, src, details)
     if ok and type(attribution) == 'table' and attribution.business == business.id
         and attribution.shop == details.shop and type(attribution.stocker) == 'string' then
         local requested = math.min(math.floor(gross * (module.commission / 100)), net)
-        local employee = requested > 0 and exports.qbcore:getPlayerByCitizenId(attribution.stocker) or nil
+        local employee = requested > 0 and exports.kora_core:getPlayerByCitizenId(attribution.stocker) or nil
         if employee then
             local debited = Pos.debit(business.job, requested, 'sold-stock commission')
             if debited then
-                local paid = exports.qbcore:addMoney(employee.source, 'bank', requested, 'qbjobcreator-sale-commission')
+                local paid = exports.kora_core:addMoney(employee.source, 'bank', requested, 'qbjobcreator-sale-commission')
                 if paid then
                     commission = requested
                     QB.notify.send(employee.source, {
@@ -521,20 +521,20 @@ end
 QB.callback.register('qbjobcreator:server:openShop', function(src, shopId)
     local record = shops[shopId]
     if not record then return false, 'Unknown till.' end
-    return exports.qbinventory:OpenInventory(src, record.module.id, { type = 'shop', id = record.module.id })
+    return exports.kora_inventory:OpenInventory(src, record.module.id, { type = 'shop', id = record.module.id })
 end, { rateLimit = { max = 10, window = 10000 } })
 
 QB.callback.register('qbjobcreator:server:openStock', function(src, shopId)
     local _, _, err = tillContext(src, shopId)
     if err then return false, err end
-    return exports.qbinventory:stashOpen(src, stockId(shopId))
+    return exports.kora_inventory:stashOpen(src, stockId(shopId))
 end, { rateLimit = { max = 10, window = 10000 } })
 
 ---The current shelf, as a boss-facing price list.
 QB.callback.register('qbjobcreator:server:tillPrices', function(src, shopId)
     local _, module, err = tillContext(src, shopId, true)
     if err then return nil, err end
-    local shelf = exports.qbinventory:GetShopItems(shopId) or {}
+    local shelf = exports.kora_inventory:GetShopItems(shopId) or {}
     local rows = {}
     for slot, item in pairs(shelf) do
         local _, isFixed = Pos.priceFor(shopId, item.name)
@@ -555,7 +555,7 @@ QB.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId, s
     price = math.floor(tonumber(price) or -1)
     if price < 0 or price > Config.pos.maxPrice then return false, 'That price is out of range.' end
 
-    local shelf = exports.qbinventory:GetShopItems(shopId) or {}
+    local shelf = exports.kora_inventory:GetShopItems(shopId) or {}
     local item = shelf[slot]
     if not item then return false, 'That slot is empty.' end
 
@@ -563,7 +563,7 @@ QB.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId, s
     if isFixed then return false, 'That item has a fixed price.' end
 
     item.price = price
-    local ok, writeErr = exports.qbinventory:SetShopItems(shopId, shelf)
+    local ok, writeErr = exports.kora_inventory:SetShopItems(shopId, shelf)
     if not ok then return false, writeErr or 'Could not update the price.' end
     rememberPrice(shopId, item.name, price)
 
@@ -582,7 +582,7 @@ QB.callback.register('qbjobcreator:server:panic', function(src, businessId, shop
     local allowed, accessErr = State.employeeAt(src, business, record, true)
     if not allowed then return false, accessErr end
 
-    if GetResourceState('qbdispatch') ~= 'started' then
+    if GetResourceState('kora_dispatch') ~= 'started' then
         return false, 'No dispatch service is available.'
     end
 
@@ -595,7 +595,7 @@ QB.callback.register('qbjobcreator:server:panic', function(src, businessId, shop
     end
     local coords = anchor and vector3(anchor.x, anchor.y, anchor.z) or GetEntityCoords(GetPlayerPed(src))
 
-    local callId, recipients = exports.qbdispatch:createCall({
+    local callId, recipients = exports.kora_dispatch:createCall({
         jobTypes = Config.panic.jobTypes,
         code = Config.panic.code,
         priority = Config.panic.priority,

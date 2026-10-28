@@ -35,8 +35,8 @@ local core = {
     end,
     addItem = function(_, _, name, amount) counts[name] = (counts[name] or 0) + amount; rebuildItems(); return true end,
 }
-env.GetCurrentResourceName = function() return 'qbinventory' end
-env.GetInvokingResource = function() return 'qbjobcreator' end
+env.GetCurrentResourceName = function() return 'kora_inventory' end
+env.GetInvokingResource = function() return 'kora_jobcreator' end
 env.GetGameTimer = function() return 1000 end
 env.GetPlayerRoutingBucket = function() return 0 end
 env.CreateThread, env.Wait, env.RegisterCommand = noop, noop, noop
@@ -48,14 +48,14 @@ env.QB = {
     callback = { register = noop }, sql = {},
 }
 -- Cfx's exports boundary requires table resource access and callable registration.
-env.exports = setmetatable({ qbcore = core }, { __call = function(_, name, fn) native[name] = fn end })
+env.exports = setmetatable({ kora_core = core }, { __call = function(_, name, fn) native[name] = fn end })
 local function load(path, target) assert(loadfile(path, 't', target or env))() end
-load('../qblib/local/resources/server.lua')
-load('../qbinventory/config.lua'); load('../qbinventory/shared.lua'); load('../qbinventory/server.lua')
-load('../qbinventory/server/crafting.lua')
+load('../kora_lib/local/resources/server.lua')
+load('../kora_inventory/config.lua'); load('../kora_inventory/shared.lua'); load('../kora_inventory/server.lua')
+load('../kora_inventory/server/crafting.lua')
 local inventory = env.QbInventory
 local job = {}; for name, value in pairs(env) do job[name] = value end
-job.GetCurrentResourceName = function() return 'qbjobcreator' end
+job.GetCurrentResourceName = function() return 'kora_jobcreator' end
 job.QbJobCreator = {
     logs = { record = function(business, entry) logs[#logs + 1] = { business = business, entry = entry } end, recent = noop },
     pos = { register = noop, resetBusiness = noop },
@@ -84,7 +84,7 @@ local create = inventoryExports.createUseable
 inventoryExports.createUseable = function(_, name, callback)
     registrations[name] = (registrations[name] or 0) + 1; return create(nil, name, callback)
 end
-job.exports = setmetatable({ qbcore = core, qbinventory = inventoryExports }, { __call = noop })
+job.exports = setmetatable({ kora_core = core, kora_inventory = inventoryExports }, { __call = noop })
 load('config.lua', job); load('shared/schema.lua', job)
 job.Config.recipes.first = { ingredients = { { item = 'ingredient', amount = 2 } },
     give = { { item = 'recipe_old', amount = 1 } }, completeLabel = 'First crafted' }
@@ -162,7 +162,7 @@ check(use('box2') == false and counts.box2 == box2Before and counts.old_reward =
 Crafting.registerUseable({ id = 'direct', label = 'Direct helper' }, module('box', 'other_reward', 0))
 rewardBefore = counts.other_reward
 check(use('box') and counts.other_reward == rewardBefore + 1, 'direct two-argument helper remains compatible')
-for _, callback in ipairs(handlers.onResourceStop or {}) do callback('qbjobcreator') end
+for _, callback in ipairs(handlers.onResourceStop or {}) do callback('kora_jobcreator') end
 rewardBefore = counts.other_reward
 check(use('box') == false and counts.other_reward == rewardBefore, 'existing provider owner-stop cleanup still applies')
 H.finish('useables')

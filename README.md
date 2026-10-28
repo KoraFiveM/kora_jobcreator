@@ -1,4 +1,4 @@
-# qbjobcreator
+# kora_jobcreator
 
 An in-game, qblib-native job and business creator. A business is a
 job, a perimeter, and a stack of **modules** — a till, a stash, a crafting
@@ -7,27 +7,27 @@ in MySQL. There is no config file to edit, no snippet to paste, and no restart:
 what you build appears for every player on the server as you build it.
 
 Inspired by [`jay-businesses`](https://github.com/Jay60Dev/jay-businesses),
-rewritten from scratch on qblib / qbcore / qbsql / qbinventory / qbtarget.
+rewritten from scratch on kora_lib / kora_core / kora_sql / kora_inventory / kora_target.
 
-qblib owns the application shell, forms, menus, notifications, callbacks,
+kora_lib owns the application shell, forms, menus, notifications, callbacks,
 database access, configuration, shared registries, interactions, zones,
 placement, raycasts, progress, entities, blips, animation, logging, Discord
-delivery, rewards, and proximity checks. qbtarget is used directly only for
-polygon interaction zones, which qblib does not currently expose.
+delivery, rewards, and proximity checks. kora_target is used directly only for
+polygon interaction zones, which kora_lib does not currently expose.
 
 ---
 
 ## Install
 
-1. Drop `qbjobcreator` into your resources folder.
-2. Start it **after** `qblib`, `qbsql`, `qbcore`, `qbinventory` and `qbtarget`:
+1. Drop `kora_jobcreator` into your resources folder.
+2. Start it **after** `kora_lib`, `kora_sql`, `kora_core`, `kora_inventory` and `kora_target`:
 
 ```cfg
-ensure qbjobcreator
+ensure kora_jobcreator
 ```
 
-The migration runs itself on first boot. `qbbossmenu` (business bank account)
-and `qbdispatch` (panic button) are optional — the resource starts and runs
+The migration runs itself on first boot. `kora_bossmenu` (business bank account)
+and `kora_dispatch` (panic button) are optional — the resource starts and runs
 without either, and says so when you try to use a feature that needs one.
 
 A demo **Burger Shot** is seeded on first boot so there is something to look at,
@@ -47,9 +47,9 @@ Job Creator
   Burger Shot                  -> Overview / Modules / Activity
 ```
 
-The console is a registered qblib AppShell app. Actions and forms stay in the
+The console is a registered kora_lib AppShell app. Actions and forms stay in the
 selected business workspace. Every coordinate or placement action declares
-`closeBeforeAction`, so qblib closes the shell and releases its focus lease
+`closeBeforeAction`, so kora_lib closes the shell and releases its focus lease
 before the world editor starts. When capture finishes (or is cancelled), the
 creator reopens AppShell on the same business, tab, and selected module with
 the returned coordinates applied.
@@ -59,8 +59,8 @@ it wants a map blip. "Where" is never typed in:
 
 | Anchor | Tool |
 |---|---|
-| Sphere / box / poly zone | qblib's in-world zone creator — fly, aim, place, scroll to size |
-| Prop / ped / vehicle | qblib's placement tool — position it, then confirm |
+| Sphere / box / poly zone | kora_lib's in-world zone creator — fly, aim, place, scroll to size |
+| Prop / ped / vehicle | kora_lib's placement tool — position it, then confirm |
 | An object already there | Look at it and press `E`; a box zone is fitted to its model |
 
 Saving pushes the row to MySQL and the new definition to every connected
@@ -87,7 +87,7 @@ library before saving the module.
 | **Zone** | The business perimeter. Entering builds everything below and clocks staff on; leaving tears it down and clocks them off. |
 | **Blip** | A map marker. |
 | **StaticEntity** | Decorative props, peds or vehicles with no interaction. |
-| **BossMenu** | Opens `qbbossmenu` for a boss of this job. |
+| **BossMenu** | Opens `kora_bossmenu` for a boss of this job. |
 | **POS** | A customer-facing till, an employee-facing intake stash, prices, tax, sold-stock commission and an optional panic button. |
 | **Stash** | Job-locked storage. |
 | **Crafting** | A bench offering recipes from the shared recipe library, with live ingredient counts and optional skill gates. |
@@ -98,7 +98,7 @@ its own blip, and may be marked `public` to drop its job lock.
 
 ### How a till works
 
-Stock is **not** stored by this resource — qbinventory already owns a shop
+Stock is **not** stored by this resource — kora_inventory already owns a shop
 inventory and persists it, and a second copy of the same shelf is exactly the
 bug worth avoiding. What this resource owns is the policy around it.
 
@@ -121,7 +121,7 @@ employee                          customer
   nothing. When a customer actually buys it, the business receives the sale and
   the online stocker is paid from that revenue.
 * A sale credits the business account with the price minus **tax**, and is
-  credited from qbinventory's committed purchase record — never from a
+  credited from kora_inventory's committed purchase record — never from a
   pre-commit hook, which would pay out for sales that then fail.
 * `hideWhenStaffed` stops customers self-serving while an employee is inside.
   Staff presence means an on-duty employee whose live server position remains
@@ -153,20 +153,20 @@ optional skill adapter. Business *definitions* are not configured there.
   `qbjobcreator_deleted` prevent reseeding; admins can still explicitly recreate
   the same id. In-game edits and deletions always win. A seed may
   also carry a `jobDefinition`, registered at boot when no job of that name
-  exists yet — qbcore's job registry is in-memory, so this is re-checked every
+  exists yet — kora_core's job registry is in-memory, so this is re-checked every
   start, and a server that defines its own version of the job always wins.
 
 ### Skills
 
 Off by default. `Config.skills.enabled = true` turns on the `levelRequired` and
 `xpGained` fields on recipes, using `getLevel`/`addXp` adapters that default to
-qbcore metadata. Point them at your own skill resource if you have one.
+kora_core metadata. Point them at your own skill resource if you have one.
 
 ### Discord
 
 `Config.webhooks.default` receives every business event; a `[jobname]` key
 receives that job's as well, and a POS module may name a third URL of its own.
-All of it also lands in `qbjobcreator_logs` and in qblib's own event log
+All of it also lands in `qbjobcreator_logs` and in kora_lib's own event log
 regardless of whether any webhook is configured.
 
 Webhook URLs are omitted from client definitions and copied public module data.
@@ -179,15 +179,15 @@ so unrelated edits retain its saved webhook. Server exports retain full definiti
 
 ```lua
 -- server
-exports.qbjobcreator:getBusinesses()             -- every definition
-exports.qbjobcreator:getBusiness(id)
-exports.qbjobcreator:getBusinessesByJob(job)     -- ids
-exports.qbjobcreator:getStaffCounts()            -- businessId -> staff inside
-exports.qbjobcreator:recordBusinessLog(id, category, message, amount)
+exports.kora_jobcreator:getBusinesses()             -- every definition
+exports.kora_jobcreator:getBusiness(id)
+exports.kora_jobcreator:getBusinessesByJob(job)     -- ids
+exports.kora_jobcreator:getStaffCounts()            -- businessId -> staff inside
+exports.kora_jobcreator:recordBusinessLog(id, category, message, amount)
 
 -- client
-exports.qbjobcreator:getBusinesses()
-exports.qbjobcreator:openBusinessMenu()
+exports.kora_jobcreator:getBusinesses()
+exports.kora_jobcreator:openBusinessMenu()
 ```
 
 ---
@@ -196,12 +196,12 @@ exports.qbjobcreator:openBusinessMenu()
 
 | Table | Holds |
 |---|---|
-| `qbjobcreator` | One row per business: label, job, and its modules as JSON. |
+| `kora_jobcreator` | One row per business: label, job, and its modules as JSON. |
 | `qbjobcreator_deleted` | Deleted business IDs, retained to prevent automatic reseeding. |
 | `qbjobcreator_prices` | Employee-set prices, remembered per till and item. |
 | `qbjobcreator_logs` | Sales, restocks, payments, crafts and admin edits. |
 
-Shop stock and stash contents live in qbinventory's own tables.
+Shop stock and stash contents live in kora_inventory's own tables.
 
 ---
 
@@ -213,5 +213,5 @@ test/run.sh          # LUA=lua5.4 test/run.sh to pick an interpreter
 
 Plain Lua, no FiveM and no database. The schema is exercised for real; the
 server and client files are checked against the invariants that matter —
-authorisation, rate limits, rollbacks, and the threading rules around qblib's
-shared zone tick and qbtarget's shared target loop.
+authorisation, rate limits, rollbacks, and the threading rules around kora_lib's
+shared zone tick and kora_target's shared target loop.

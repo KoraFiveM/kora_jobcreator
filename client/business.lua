@@ -19,9 +19,9 @@ local Client = QbJobCreator.client
 local Business = {}
 QbJobCreator.Business = Business
 
--- qblib owns normal entity and zone interactions. qbtarget remains a narrow
+-- kora_lib owns normal entity and zone interactions. kora_target remains a narrow
 -- fallback for polygon interaction zones, which QB.interact does not expose.
-local target = exports.qbtarget
+local target = exports.kora_target
 
 ---@class QBBossMenuClientExports
 ---@field openBossMenu fun(self: QBBossMenuClientExports)
@@ -52,7 +52,7 @@ end
 ---@return integer
 local function itemCount(name)
     -- An array path, not a dotted string -- see Client.job().
-    local items = exports.qbcore:getPlayerData({ 'items' }) or {}
+    local items = exports.kora_core:getPlayerData({ 'items' }) or {}
     local total = 0
     for _, item in pairs(items) do
         if item and item.name == name then total = total + (item.amount or 0) end
@@ -105,7 +105,7 @@ function Business.build(business, scope, startup)
 end
 
 ---Entering yields -- props stream in and the server is told who arrived -- and
----`onEnter` runs on qblib's shared zone tick thread, which every zone in every
+---`onEnter` runs on kora_lib's shared zone tick thread, which every zone in every
 ---resource shares. So the flag flips synchronously (that is what makes a second
 ---`onEnter` a no-op) and the actual work is handed to a thread of our own.
 ---
@@ -209,7 +209,7 @@ function Business.attach(business, scope, index, module, entities, options)
     for _, option in ipairs(options) do
         option.distance = option.distance or module.distance
 
-        -- qbtarget invokes a single-candidate onSelect on its own tick thread.
+        -- kora_target invokes a single-candidate onSelect on its own tick thread.
         -- Nearly everything here yields (a callback, a dialog, a progress bar),
         -- which would stall targeting for as long as the menu is open -- and
         -- QB.callback.trigger has to be inside a coroutine anyway.
@@ -218,7 +218,7 @@ function Business.attach(business, scope, index, module, entities, options)
             local args = table.pack(...)
             CreateThread(function() select_(table.unpack(args, 1, args.n)) end)
         end
-        -- QB.interact dispatches `action`; qbtarget's polygon fallback invokes
+        -- QB.interact dispatches `action`; kora_target's polygon fallback invokes
         -- `onSelect`. Keep both pointed at the same yield-safe wrapper.
         option.action = runSelection
         option.onSelect = runSelection
@@ -339,11 +339,11 @@ builders.BossMenu = function(business, _, _, module)
         icon = module.icon or 'Briefcase',
         canInteract = function() return Client.isBoss(business) end,
         onSelect = function()
-            if GetResourceState('qbbossmenu') ~= 'started' then
+            if GetResourceState('kora_bossmenu') ~= 'started' then
                 return Client.notify('The boss menu is unavailable.', 'error')
             end
             ---@type QBBossMenuClientExports
-            local bossMenu = exports.qbbossmenu
+            local bossMenu = exports.kora_bossmenu
             bossMenu:openBossMenu()
         end,
     } }

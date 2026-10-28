@@ -5,7 +5,7 @@
 -- targets, props) is created by the client from the replicated definition.
 --
 -- Registration is idempotent by design, because it re-runs on every edit: a
--- business is re-registered whole rather than diffed, and qbinventory returns
+-- business is re-registered whole rather than diffed, and kora_inventory returns
 -- the existing inventory for an id it already knows rather than resetting it.
 
 QbJobCreator = QbJobCreator or {}
@@ -59,7 +59,7 @@ handlers.Stash = function(business, module)
         print(('^3[qbjobcreator]^7 stash id "%s" has conflicting access across modules'):format(module.id))
     end
     addBoundary(record, module)
-    exports.qbinventory:RegisterStash(module.id, record.module.label or business.label,
+    exports.kora_inventory:RegisterStash(module.id, record.module.label or business.label,
         record.module.slots, record.module.weight, false,
         record.module.public and nil or { [business.job] = 0 }, record.coords, record.distance)
 end
@@ -92,10 +92,10 @@ function Register.removeBusiness(business)
     end
     -- Rebuild this business's registry slice so moved modules replace their old
     -- coordinate policy and removed stashes fail closed. Inventory contents are
-    -- retained by qbinventory when an id is re-registered.
+    -- retained by kora_inventory when an id is re-registered.
     for id, record in pairs(stashes) do
         if record.businessId == business.id then
-            exports.qbinventory:RegisterStash(id, record.module.label or business.label,
+            exports.kora_inventory:RegisterStash(id, record.module.label or business.label,
                 record.module.slots, record.module.weight, false,
                 record.module.public and nil or { [business.job] = 0 }, {}, record.distance)
             stashes[id] = nil
@@ -130,5 +130,5 @@ QB.callback.register('qbjobcreator:server:openStash', function(src, stashId)
     if not record.module.public and not State.worksFor(src, business.job) then
         return false, 'You do not work here.'
     end
-    return exports.qbinventory:stashOpen(src, stashId)
+    return exports.kora_inventory:stashOpen(src, stashId)
 end, { rateLimit = { max = 10, window = 10000 } })

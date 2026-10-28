@@ -104,7 +104,7 @@ H.ok(pos:find('serverData = existing and existing.serverData', 1, true),
     'stock batches retain server-only employee attribution until sale')
 H.ok(crafting:find('for _, undo in ipairs(removed) do', 1, true),
     'a partial ingredient removal is rolled back')
-H.ok(crafting:find('exports.qbinventory:CanCraftItems(src, needed, produced)', 1, true),
+H.ok(crafting:find('exports.kora_inventory:CanCraftItems(src, needed, produced)', 1, true),
     'combined output capacity is checked before ingredient removal')
 
 -- --- validation ------------------------------------------------------------
@@ -122,7 +122,7 @@ H.ok(pos:find('coords = record.coords', 1, true), 'POS shops register every fixt
 
 -- --- seed jobs -------------------------------------------------------------
 --
--- qbcore's shared registries are in-memory and rebuilt from its own seed files
+-- kora_core's shared registries are in-memory and rebuilt from its own seed files
 -- on every start. Registering a seed's job inside the first-boot business
 -- insert would therefore leave it missing on every boot after the first, and
 -- the business would silently go inert.

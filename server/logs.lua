@@ -1,4 +1,4 @@
--- Business logging: a durable per-business log line, qblib's own event log, and
+-- Business logging: a durable per-business log line, kora_lib's own event log, and
 -- an optional Discord embed.
 --
 -- Webhooks are resolved per business rather than per module so a module only
@@ -40,7 +40,7 @@ end
 ---@return string|nil citizenid, string name
 local function actor(src)
     if not src then return nil, 'System' end
-    local data = exports.qbcore:getPlayerData(src)
+    local data = exports.kora_core:getPlayerData(src)
     if not data then return nil, ('Player %s'):format(tostring(src)) end
     local charinfo = data.charinfo or {}
     local name = data.name
@@ -59,7 +59,7 @@ function Logs.record(business, entry)
     local citizenid, name = actor(entry.src)
     local message = tostring(entry.message):sub(1, 512)
 
-    -- insertAsync, not enqueue: qbsql's write queue coalesces by primary key,
+    -- insertAsync, not enqueue: kora_sql's write queue coalesces by primary key,
     -- and an append-only AUTO_INCREMENT log has no key to coalesce on -- every
     -- row would merge into one. This still never yields the caller.
     QB.sql.insertAsync([[INSERT INTO `qbjobcreator_logs` (`business`,`category`,`message`,`citizenid`,`amount`)
