@@ -35,7 +35,7 @@ local attach = business:match('function Business%.attach%(business.-\nend\n')
 H.ok(attach and attach:find('option.onSelect = runSelection', 1, true),
     'every target option is wrapped before registration')
 H.ok(attach and attach:find('option.action = runSelection', 1, true),
-    'qblib interactions receive the same wrapped selection action')
+    'kora_lib interactions receive the same wrapped selection action')
 H.ok(attach and attach:find('CreateThread(function() select_', 1, true),
     'onSelect never yields on qbtarget\'s own tick thread')
 
@@ -67,7 +67,7 @@ H.ok(clear:find('pcall(zone.remove)', 1, true),
 H.ok(business:find('QB.interact.addEntity', 1, true)
     and business:find('QB.interact.addCircleZone', 1, true)
     and business:find('QB.interact.addBoxZone', 1, true),
-    'entity, sphere and box interactions use qblib')
+    'entity, sphere and box interactions use kora_lib')
 H.ok(business:find("module.zoneType == 'poly'", 1, true)
     and business:find('target:addPolyZone', 1, true),
     'qbtarget is retained only for polygon interactions unsupported by QB.interact')

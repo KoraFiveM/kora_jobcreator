@@ -7,7 +7,7 @@ name 'kora_jobcreator'
 provide 'qbjobcreator'
 author 'qbcore2'
 version '1.0.0'
-description 'qblib-native in-game job and business creator'
+description 'kora_lib-native in-game job and business creator'
 
 dependency 'kora_lib'
 dependency 'kora_sql'

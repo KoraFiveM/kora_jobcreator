@@ -1,6 +1,6 @@
 # kora_jobcreator
 
-An in-game, qblib-native job and business creator. A business is a
+An in-game, kora_lib-native job and business creator. A business is a
 job, a perimeter, and a stack of **modules** — a till, a stash, a crafting
 bench, a boss desk, a prop — and every one of them is built in-game and stored
 in MySQL. There is no config file to edit, no snippet to paste, and no restart:

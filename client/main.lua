@@ -58,7 +58,7 @@ RegisterNetEvent('qbjobcreator:client:staff', function(counts)
     Creator.refresh()
 end)
 
----Rebuild local world handles so kora_target/qblib pick up an administrator's
+---Rebuild local world handles so kora_target/kora_lib pick up an administrator's
 ---debug-visualisation preference. This is intentionally client-local: debug
 ---outlines are a troubleshooting aid, not shared business data.
 ---@param value boolean

@@ -25,17 +25,17 @@ for _, file in ipairs(clientFiles) do client = client .. read(file) end
 for _, dependency in ipairs({ 'kora_lib', 'kora_sql', 'kora_core', 'kora_inventory', 'kora_target' }) do
     H.ok(manifest:find(("dependency '%s'"):format(dependency), 1, true), 'depends on ' .. dependency)
 end
-H.ok(manifest:find("'@kora_lib/init.lua'", 1, true), 'loads the qblib mirror')
+H.ok(manifest:find("'@kora_lib/init.lua'", 1, true), 'loads the kora_lib mirror')
 H.ok(manifest:find("'@kora_core/init.lua'", 1, true), 'loads the qbcore mirror')
 H.ok(manifest:find("'shared/schema.lua'", 1, true), 'the schema is shared by both realms')
 H.ok(manifest:find("'config.lua',", 1, true), 'config loads before the shared files that append to it')
 H.ok(manifest:find('sql/001_businesses.sql', 1, true), 'the migration is a packaged file')
 H.ok(client:find('QB.blips.getCategoryIds()', 1, true),
-    'the creator category select comes from qblib instead of free text')
+    'the creator category select comes from kora_lib instead of free text')
 H.ok(client:find("type = 'select'", 1, true) and client:find("default = 'Business'", 1, true),
     'the creator offers a safe category selection with a Business fallback')
 H.nope(client:find('label = values.name or values.category', 1, true),
-    'new blips do not preformat or override qblib category/name labels')
+    'new blips do not preformat or override kora_lib category/name labels')
 
 -- Webhook URLs are credentials. The shared config bundle is fetched by every
 -- client, so webhook policy must be loaded by the server alone.
