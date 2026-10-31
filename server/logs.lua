@@ -62,13 +62,13 @@ function Logs.record(business, entry)
     -- insertAsync, not enqueue: kora_sql's write queue coalesces by primary key,
     -- and an append-only AUTO_INCREMENT log has no key to coalesce on -- every
     -- row would merge into one. This still never yields the caller.
-    QB.sql.insertAsync([[INSERT INTO `qbjobcreator_logs` (`business`,`category`,`message`,`citizenid`,`amount`)
+    Kora.sql.insertAsync([[INSERT INTO `qbjobcreator_logs` (`business`,`category`,`message`,`citizenid`,`amount`)
         VALUES (?,?,?,?,?)]], {
         business.id, entry.category, message, citizenid,
         entry.amount and math.floor(entry.amount) or nil,
     }, function() end)
 
-    QB.logging.event('qbjobcreator:' .. entry.category, entry.src, {
+    Kora.logging.event('qbjobcreator:' .. entry.category, entry.src, {
         business = business.id, job = business.job, message = message, amount = entry.amount,
     })
 
@@ -79,7 +79,7 @@ function Logs.record(business, entry)
     if entry.src then fields[#fields + 1] = { name = 'Player', value = ('%s (%s)'):format(name, tostring(entry.src)), inline = true } end
     for _, field in ipairs(entry.fields or {}) do fields[#fields + 1] = field end
 
-    local embed = QB.discord.createEmbed({
+    local embed = Kora.discord.createEmbed({
         title = ('%s: %s'):format(business.label, entry.category),
         description = message,
         color = COLORS[entry.category] or 0x95a5a6,
@@ -88,7 +88,7 @@ function Logs.record(business, entry)
     })
 
     for _, url in ipairs(urls) do
-        QB.discord.sendWebhook(url, { username = 'Businesses', embeds = { embed } })
+        Kora.discord.sendWebhook(url, { username = 'Businesses', embeds = { embed } })
     end
 end
 
@@ -100,7 +100,7 @@ function Logs.trim(businessId)
     -- `retain` rows the subquery is empty, COALESCE yields 0, and nothing is
     -- deleted. The derived table is required: MySQL cannot read the same table
     -- it is deleting from in a bare subquery.
-    QB.sql.executeAsync([[DELETE FROM `qbjobcreator_logs`
+    Kora.sql.executeAsync([[DELETE FROM `qbjobcreator_logs`
         WHERE `business` = ? AND `id` <= COALESCE((
             SELECT `cutoff` FROM (
                 SELECT `id` AS `cutoff` FROM `qbjobcreator_logs`
@@ -113,7 +113,7 @@ end
 ---@param limit? integer
 ---@return table[]
 function Logs.recent(businessId, limit)
-    local rows = QB.sql.query([[SELECT `category`, `message`, `amount`, `created_at`
+    local rows = Kora.sql.query([[SELECT `category`, `message`, `amount`, `created_at`
         FROM `qbjobcreator_logs` WHERE `business` = ? ORDER BY `id` DESC LIMIT ?]], {
         businessId, math.min(math.max(math.floor(tonumber(limit) or 25), 1), 100),
     })

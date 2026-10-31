@@ -21,7 +21,7 @@ local isAdmin = false
 
 local function blipCategoryOptions()
     local names = {}
-    for name in pairs(QB.blips.getCategoryIds()) do names[#names + 1] = name end
+    for name in pairs(Kora.blips.getCategoryIds()) do names[#names + 1] = name end
     table.sort(names)
 
     local options = {}
@@ -33,7 +33,7 @@ end
 ---@param title string
 ---@return string|nil selectedId
 local function pick(items, title)
-    local result = QB.nui.openMenu(items, title)
+    local result = Kora.nui.openMenu(items, title)
     if not result or result.cancelled then return nil end
     return result.selectedId
 end
@@ -43,7 +43,7 @@ end
 ---@param description? string
 ---@return table|nil values
 local function form(fields, title, description)
-    local result = QB.nui.openInputDialog(fields, title, description)
+    local result = Kora.nui.openInputDialog(fields, title, description)
     if not result or result.cancelled then return nil end
     return result.values
 end
@@ -52,7 +52,7 @@ end
 -- Anchors
 -- ---------------------------------------------------------------------------
 
----Converts a `QB.zones.startCreator` result into the flat fields the schema
+---Converts a `Kora.zones.startCreator` result into the flat fields the schema
 ---stores. The creator speaks in constructor options; the schema speaks in
 ---plain JSON, and this is the only place the two meet.
 ---@param result table
@@ -83,12 +83,12 @@ end
 ---recoverable from its hash at runtime -- only its dimensions are.
 ---@return table|nil
 local function pickExisting()
-    local prompt = QB.textui.show('Look at the object and press ~b~E~s~ -- ~r~Backspace~s~ to cancel')
+    local prompt = Kora.textui.show('Look at the object and press ~b~E~s~ -- ~r~Backspace~s~ to cancel')
     local fields
 
     while true do
         Wait(0)
-        local hit, coords, entity = QB.raycast.fromCamera(25.0)
+        local hit, coords, entity = Kora.raycast.fromCamera(25.0)
         if hit and entity and entity ~= 0 then
             DrawMarker(28, coords.x, coords.y, coords.z, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0, 200, 120, 120, false, false, 2, nil, nil, false)
         end
@@ -108,7 +108,7 @@ local function pickExisting()
         end
     end
 
-    QB.textui.hide(prompt)
+    Kora.textui.hide(prompt)
     return fields
 end
 
@@ -126,7 +126,7 @@ local function pickEntity(modelType)
         return nil
     end
 
-    local placement = QB.placement.start(model)
+    local placement = Kora.placement.start(model)
     if not placement then return nil end
 
     return {
@@ -160,7 +160,7 @@ local function pickAnchor(allowed)
     if kind == 'existing' then return pickExisting() end
     if kind == 'object' or kind == 'ped' or kind == 'vehicle' then return pickEntity(kind) end
 
-    local result = QB.zones.startCreator(kind)
+    local result = Kora.zones.startCreator(kind)
     if not result then return nil end
     return zoneFields(result)
 end
@@ -358,7 +358,7 @@ local function editModule(business, index, moduleType)
         if blip then payload.blip = blip end
     end
 
-    local ok, result = QB.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
+    local ok, result = Kora.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
     Client.notify(ok and 'Module saved. It is live now.' or (result or 'That module was rejected.'), ok and 'success' or 'error')
     return ok == true, ok and tonumber(result) or nil
 end
@@ -371,7 +371,7 @@ end
 ---@return boolean? saved
 local function editModuleData(business, index)
     -- Public definitions omit webhooks; editing needs the authorized full copy.
-    local module, err = QB.callback.trigger('qbjobcreator:server:module', business.id, index)
+    local module, err = Kora.callback.trigger('qbjobcreator:server:module', business.id, index)
     if not module then
         Client.notify(err or 'That module no longer exists.', 'error')
         return false
@@ -397,7 +397,7 @@ local function editModuleData(business, index)
     -- is the intentional path for switching types, because each type has a
     -- different field set and placement rule.
     payload.moduleType = module.moduleType
-    local saved, err = QB.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
+    local saved, err = Kora.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
     Client.notify(saved and 'Module data saved. It is live now.' or (err or 'That data was rejected.'), saved and 'success' or 'error')
     return saved == true
 end
@@ -438,10 +438,10 @@ local function loadBusinessSummary(state)
     state.balance, state.balanceError, state.logs, state.logsError = nil, nil, {}, nil
     if not state.businessId or not Client.definitions[state.businessId] then return end
 
-    local balance, balanceError = QB.callback.trigger('qbjobcreator:server:balance', state.businessId)
+    local balance, balanceError = Kora.callback.trigger('qbjobcreator:server:balance', state.businessId)
     if balance ~= nil then state.balance = balance else state.balanceError = balanceError end
 
-    local logs, logsError = QB.callback.trigger('qbjobcreator:server:logs', state.businessId, 50)
+    local logs, logsError = Kora.callback.trigger('qbjobcreator:server:logs', state.businessId, 50)
     if type(logs) == 'table' then state.logs = logs else state.logsError = logsError end
 end
 
@@ -743,7 +743,7 @@ end
 ---@param values table
 local function createBusinessAndResume(state, values)
     CreateThread(function()
-        local businessId, err = QB.callback.trigger('qbjobcreator:server:createBusiness', values)
+        local businessId, err = Kora.callback.trigger('qbjobcreator:server:createBusiness', values)
         if not businessId then
             Client.notify(err or 'Could not create that business.', 'error')
             return openManagement(state, 'businesses')
@@ -832,12 +832,12 @@ local function actionHandler(state)
             Client.setDebug(not Client.debug)
             return { update = appUpdate(state), notice = { tone = 'success', message = Client.debug and 'Local world debug enabled.' or 'Local world debug hidden.' } }
         elseif actionId == 'businesses:copy-business-data' then
-            QB.nui.copyToClipboard(json.encode(business))
+            Kora.nui.copyToClipboard(json.encode(business))
             return { notice = { tone = 'success', message = 'Business data copied to your clipboard.' } }
         elseif actionId == 'businesses:copy-module-data' then
             local module = business.modules[state.moduleIndex or 0]
             if not module then return { notice = { tone = 'warning', message = 'Select a module to copy its data.' } } end
-            QB.nui.copyToClipboard(json.encode(module))
+            Kora.nui.copyToClipboard(json.encode(module))
             return { notice = { tone = 'success', message = 'Module data copied to your clipboard.' } }
         elseif actionId == 'businesses:remove-module' then
             local index = math.floor(tonumber(itemId) or 0)
@@ -845,7 +845,7 @@ local function actionHandler(state)
                 return { notice = { tone = 'destructive', message = 'That module no longer exists.' } }
             end
             local previousRev = business.rev
-            local ok, err = QB.callback.trigger('qbjobcreator:server:removeModule', business.id, index)
+            local ok, err = Kora.callback.trigger('qbjobcreator:server:removeModule', business.id, index)
             if not ok then return { notice = { tone = 'destructive', message = err or 'Could not delete that module.' } } end
             awaitBusiness(business.id, previousRev)
             state.moduleIndex = nil
@@ -853,7 +853,7 @@ local function actionHandler(state)
             return { update = appUpdate(state), notice = { tone = 'success', message = 'Module deleted.' } }
         elseif actionId == 'businesses:edit' then
             local previousRev = business.rev
-            local ok, err = QB.callback.trigger('qbjobcreator:server:editBusiness', business.id, {
+            local ok, err = Kora.callback.trigger('qbjobcreator:server:editBusiness', business.id, {
                 label = values.label, job = values.job,
             })
             if not ok then return { notice = { tone = 'destructive', message = err or 'That change was rejected.' } } end
@@ -861,7 +861,7 @@ local function actionHandler(state)
             loadBusinessSummary(state)
             return { update = appUpdate(state), notice = { tone = 'success', message = 'Business updated.' } }
         elseif actionId == 'businesses:delete' then
-            local ok, err = QB.callback.trigger('qbjobcreator:server:deleteBusiness', business.id)
+            local ok, err = Kora.callback.trigger('qbjobcreator:server:deleteBusiness', business.id)
             if not ok then return { notice = { tone = 'destructive', message = err or 'Could not delete that business.' } } end
             state.businessId, state.moduleIndex, state.balance, state.logs = nil, nil, nil, {}
             return {
@@ -880,9 +880,9 @@ end
 openManagement = function(state, viewId, tabId)
     local definition = appDefinition(state)
     definition.onAction = actionHandler(state)
-    QB.nui.registerApp(definition)
+    Kora.nui.registerApp(definition)
     currentState = state
-    QB.nui.openApp(APP_ID, { viewId = viewId, tabId = tabId })
+    Kora.nui.openApp(APP_ID, { viewId = viewId, tabId = tabId })
     if currentState == state then currentState = nil end
 end
 
@@ -891,18 +891,18 @@ end
 ---the explicit Refresh action owns balance/log fetching.
 ---@return boolean updated
 function Creator.refresh()
-    if not currentState or not QB.nui.isAppOpen(APP_ID) then return false end
+    if not currentState or not Kora.nui.isAppOpen(APP_ID) then return false end
     local business = currentState.businessId and Client.definitions[currentState.businessId]
     if currentState.businessId and (not business or not (isAdmin or Client.isBoss(business))) then
         currentState.businessId, currentState.moduleIndex = nil, nil
     elseif business and currentState.moduleIndex and not business.modules[currentState.moduleIndex] then
         currentState.moduleIndex = nil
     end
-    return QB.nui.updateApp(APP_ID, appUpdate(currentState))
+    return Kora.nui.updateApp(APP_ID, appUpdate(currentState))
 end
 
 function Creator.open()
-    if QB.nui.isAppOpen(APP_ID) then return end
+    if Kora.nui.isAppOpen(APP_ID) then return end
 
     local businesses = manageableBusinesses()
     if not isAdmin and #businesses == 0 then
@@ -912,7 +912,7 @@ function Creator.open()
     CreateThread(function()
         local jobs = {}
         if isAdmin then
-            local result, err = QB.callback.trigger('qbjobcreator:server:jobs')
+            local result, err = Kora.callback.trigger('qbjobcreator:server:jobs')
             if type(result) == 'table' then jobs = result
             elseif err then Client.notify(err, 'error') end
         end

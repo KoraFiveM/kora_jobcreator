@@ -23,7 +23,7 @@ local RESOURCE = GetCurrentResourceName()
 ---for this resource's migration files.
 ---@param value string
 ---@return string
-local checksum = QB.util.fnv1a
+local checksum = Kora.util.fnv1a
 
 ---A definition's fingerprint, computed once here rather than by each client.
 ---Clients rebuild a business only when this changes, so an edit to one business
@@ -55,7 +55,7 @@ end
 ---@return table|nil
 function State.jobDefinition(name)
     if type(name) ~= 'string' or name == '' or name == 'unemployed' then return nil end
-    return QB.shared.get('jobs', name)
+    return Kora.shared.get('jobs', name)
 end
 
 ---@param src integer
@@ -111,7 +111,7 @@ function State.nearModule(src, module)
     if not exports.kora_core:getPlayerData(src) or GetPlayerPed(src) == 0 then return false end
     local coords, distance = State.moduleBoundary(module)
     for _, point in ipairs(coords) do
-        local ok, nearby = pcall(QB.distance.player, src, point, tonumber(point.distance) or distance)
+        local ok, nearby = pcall(Kora.distance.player, src, point, tonumber(point.distance) or distance)
         if ok and nearby then return true end
     end
     return false
@@ -217,7 +217,7 @@ function State.persist(raw)
     local business, err = S.normaliseBusiness(raw)
     if not business then return nil, err end
 
-    local _, writeErr = QB.sql.execute([[INSERT INTO `qbjobcreator` (`id`,`label`,`job`,`modules`) VALUES (?,?,?,?)
+    local _, writeErr = Kora.sql.execute([[INSERT INTO `qbjobcreator` (`id`,`label`,`job`,`modules`) VALUES (?,?,?,?)
         ON DUPLICATE KEY UPDATE `label` = VALUES(`label`), `job` = VALUES(`job`), `modules` = VALUES(`modules`)]], {
         business.id, business.label, business.job, json.encode(business.modules),
     })
@@ -234,7 +234,7 @@ end
 function State.remove(id)
     local business = State.get(id)
     if not business then return false, 'Unknown business.' end
-    local removed = QB.sql.transaction({
+    local removed = Kora.sql.transaction({
         { sql = 'DELETE FROM `qbjobcreator` WHERE `id` = ?', params = { id } },
         { sql = 'INSERT IGNORE INTO `qbjobcreator_deleted` (`id`) VALUES (?)', params = { id } },
     })
@@ -249,9 +249,9 @@ end
 ---registers the server-side half of each module.
 ---@return boolean ok, string|nil err
 function State.load()
-    local rows, err = QB.sql.query('SELECT `id`, `label`, `job`, `modules` FROM `qbjobcreator`')
+    local rows, err = Kora.sql.query('SELECT `id`, `label`, `job`, `modules` FROM `qbjobcreator`')
     if err then return false, err end
-    local deletedRows, deletedErr = QB.sql.query('SELECT `id` FROM `qbjobcreator_deleted`')
+    local deletedRows, deletedErr = Kora.sql.query('SELECT `id` FROM `qbjobcreator_deleted`')
     if deletedErr then return false, deletedErr end
     local deleted = {}
     for _, row in ipairs(deletedRows or {}) do deleted[row.id] = true end

@@ -88,9 +88,9 @@ RegisterNetEvent('QBCore:Client:OnJobUpdate', function()
             if business.inside then
                 if Client.worksFor(business) then
                     if business.controlDuty and Config.duty.enabled then Business.setDuty(business, true) end
-                    QB.callback.trigger('qbjobcreator:server:enter', business.id)
+                    Kora.callback.trigger('qbjobcreator:server:enter', business.id)
                 else
-                    QB.callback.trigger('qbjobcreator:server:leave', business.id)
+                    Kora.callback.trigger('qbjobcreator:server:leave', business.id)
                 end
             end
         end
@@ -104,7 +104,7 @@ local function hydrate()
     -- requests only duplicate work and can consume the server callback quota.
     if hydrating then return false end
     hydrating = true
-    local data = QB.callback.trigger('qbjobcreator:server:hydrate')
+    local data = Kora.callback.trigger('qbjobcreator:server:hydrate')
     if type(data) == 'table' then
         Creator.setAdmin(data.admin)
         Client.staff = data.staff or {}

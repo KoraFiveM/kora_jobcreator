@@ -9,8 +9,8 @@ QbJobCreator = QbJobCreator or {}
 local Client = QbJobCreator.client
 
 ---Asked when an employee restocks an item this till has no fixed price for.
-QB.callback.register('qbjobcreator:client:setPrice', function(request)
-    local result = QB.nui.openInputDialog({
+Kora.callback.register('qbjobcreator:client:setPrice', function(request)
+    local result = Kora.nui.openInputDialog({
         {
             id = 'price', label = ('Price for %s'):format(request.label or request.item),
             type = 'number', required = true, min = 0, max = request.max, default = 0,
@@ -21,8 +21,8 @@ QB.callback.register('qbjobcreator:client:setPrice', function(request)
 end)
 
 ---Asked of the employee taking a card payment.
-QB.callback.register('qbjobcreator:client:billAmount', function(request)
-    local result = QB.nui.openInputDialog({
+Kora.callback.register('qbjobcreator:client:billAmount', function(request)
+    local result = Kora.nui.openInputDialog({
         { id = 'amount', label = 'Amount', type = 'number', required = true, min = 1, max = request.max },
     }, 'Take a payment')
     if not result or result.cancelled then return nil end
@@ -30,8 +30,8 @@ QB.callback.register('qbjobcreator:client:billAmount', function(request)
 end)
 
 ---Asked of the customer being billed.
-QB.callback.register('qbjobcreator:client:approveBill', function(request)
-    local result = QB.nui.openAlert({
+Kora.callback.register('qbjobcreator:client:approveBill', function(request)
+    local result = Kora.nui.openAlert({
         title = request.business or 'Payment',
         message = ('Pay $%d?'):format(request.amount),
         confirmLabel = 'Pay',
@@ -47,7 +47,7 @@ end)
 ---@param target? integer Server id; asked for when not supplied.
 function QbJobCreator.takePayment(target)
     if not target then
-        local result = QB.nui.openInputDialog({
+        local result = Kora.nui.openInputDialog({
             { id = 'id', label = 'Player ID', type = 'number', required = true, min = 1 },
         }, 'Take a payment', 'Who are you billing?')
         if not result or result.cancelled then return end
@@ -55,7 +55,7 @@ function QbJobCreator.takePayment(target)
     end
     if not target then return end
 
-    local ok, err = QB.callback.trigger('qbjobcreator:server:requestPayment', target)
+    local ok, err = Kora.callback.trigger('qbjobcreator:server:requestPayment', target)
     if not ok then Client.notify(err or 'The payment did not go through.', 'error') end
 end
 
@@ -84,7 +84,7 @@ end)
 
 ---@param shopId string
 function QbJobCreator.openPriceEditor(shopId)
-    local till, err = QB.callback.trigger('qbjobcreator:server:tillPrices', shopId)
+    local till, err = Kora.callback.trigger('qbjobcreator:server:tillPrices', shopId)
     if not till then return Client.notify(err or 'You cannot set prices here.', 'error') end
     if #till.items == 0 then return Client.notify('There is nothing on the shelf to price.', 'info') end
 
@@ -99,7 +99,7 @@ function QbJobCreator.openPriceEditor(shopId)
         }
     end
 
-    local choice = QB.nui.openMenu(items, ('%s prices'):format(till.label or shopId))
+    local choice = Kora.nui.openMenu(items, ('%s prices'):format(till.label or shopId))
     if not choice or choice.cancelled or not choice.selectedId then return end
 
     local slot = tonumber(choice.selectedId)
@@ -107,11 +107,11 @@ function QbJobCreator.openPriceEditor(shopId)
     for _, item in ipairs(till.items) do if item.slot == slot then current = item end end
     if not current then return end
 
-    local result = QB.nui.openInputDialog({
+    local result = Kora.nui.openInputDialog({
         { id = 'price', label = ('Price for %s'):format(current.label), type = 'number', required = true, min = 0, max = till.max, default = current.price or 0 },
     }, 'Set a price')
     if not result or result.cancelled then return end
 
-    local ok, setErr = QB.callback.trigger('qbjobcreator:server:setTillPrice', shopId, slot, tonumber(result.values.price))
+    local ok, setErr = Kora.callback.trigger('qbjobcreator:server:setTillPrice', shopId, slot, tonumber(result.values.price))
     Client.notify(ok and 'Price updated.' or (setErr or 'Could not update that price.'), ok and 'success' or 'error')
 end

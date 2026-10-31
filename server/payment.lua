@@ -37,7 +37,7 @@ end
 ---@param target integer
 ---@return boolean
 local function nearEachOther(src, target)
-    return QB.world.resolveNearbyPlayer(src, target, { maxDistance = Config.payment.distance }) ~= nil
+    return Kora.world.resolveNearbyPlayer(src, target, { maxDistance = Config.payment.distance }) ~= nil
 end
 
 ---@param src integer
@@ -59,11 +59,11 @@ function Payment.request(src, target)
     -- body returns (false, reason) on every rejection, and a two-value capture
     -- would silently drop every one of those reasons.
     local results = table.pack(pcall(function()
-        local answer = QB.callback.trigger(src, 'qbjobcreator:client:billAmount', { max = Config.payment.maxAmount })
+        local answer = Kora.callback.trigger(src, 'qbjobcreator:client:billAmount', { max = Config.payment.maxAmount })
         local amount = math.floor(tonumber(answer) or 0)
         if amount <= 0 or amount > Config.payment.maxAmount then return false, 'That amount is not valid.' end
 
-        local approved = QB.callback.trigger(target, 'qbjobcreator:client:approveBill', {
+        local approved = Kora.callback.trigger(target, 'qbjobcreator:client:approveBill', {
             amount = amount, business = business.label,
         })
         -- A timed-out callback returns nothing, which is not the same thing as
@@ -91,10 +91,10 @@ function Payment.request(src, target)
             return false, creditErr or 'The business account is unavailable.'
         end
 
-        QB.notify.send(target, {
+        Kora.notify.send(target, {
             title = Config.notifyTitle, message = ('You paid %s $%d.'):format(business.label, amount), type = 'success',
         })
-        QB.notify.send(src, {
+        Kora.notify.send(src, {
             title = Config.notifyTitle,
             message = commission > 0 and ('Took $%d. Your commission: $%d.'):format(amount, commission) or ('Took $%d.'):format(amount),
             type = 'success',
@@ -119,6 +119,6 @@ function Payment.request(src, target)
     return table.unpack(results, 2, results.n)
 end
 
-QB.callback.register('qbjobcreator:server:requestPayment', function(src, target)
+Kora.callback.register('qbjobcreator:server:requestPayment', function(src, target)
     return Payment.request(src, target)
 end, { rateLimit = { max = 5, window = 15000 } })

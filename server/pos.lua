@@ -101,12 +101,12 @@ end
 local function rememberPrice(shopId, itemName, price)
     remembered[shopId] = remembered[shopId] or {}
     remembered[shopId][itemName] = price
-    QB.sql.executeAsync([[INSERT INTO `qbjobcreator_prices` (`shop`,`item`,`price`) VALUES (?,?,?)
+    Kora.sql.executeAsync([[INSERT INTO `qbjobcreator_prices` (`shop`,`item`,`price`) VALUES (?,?,?)
         ON DUPLICATE KEY UPDATE `price` = VALUES(`price`)]], { shopId, itemName, price }, function() end)
 end
 
 local function loadPrices()
-    local rows = QB.sql.query('SELECT `shop`, `item`, `price` FROM `qbjobcreator_prices`')
+    local rows = Kora.sql.query('SELECT `shop`, `item`, `price` FROM `qbjobcreator_prices`')
     remembered = {}
     for _, row in ipairs(rows or {}) do
         remembered[row.shop] = remembered[row.shop] or {}
@@ -328,7 +328,7 @@ function Pos.intake(src, shopId)
             else
                 local price, isFixed = Pos.priceFor(shopId, name)
                 if not price and not isFixed then
-                    local answer = QB.callback.trigger(src, 'qbjobcreator:client:setPrice', {
+                    local answer = Kora.callback.trigger(src, 'qbjobcreator:client:setPrice', {
                         item = name, label = item.label or name, max = Config.pos.maxPrice,
                     })
                     price = tonumber(answer)
@@ -373,7 +373,7 @@ function Pos.intake(src, shopId)
     if not next(moved) then
         intaking[shopId] = nil
         if next(rejected) then
-            QB.notify.send(src, { title = Config.notifyTitle, message = 'This till does not stock those items.', type = 'error' })
+            Kora.notify.send(src, { title = Config.notifyTitle, message = 'This till does not stock those items.', type = 'error' })
         end
         return
     end
@@ -381,7 +381,7 @@ function Pos.intake(src, shopId)
     local ok, err = exports.kora_inventory:SetShopItems(shopId, shelf)
     if not ok then
         intaking[shopId] = nil
-        QB.notify.send(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
+        Kora.notify.send(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
         print(('^3[qbjobcreator]^7 could not stock %s: %s'):format(shopId, tostring(err)))
         return
     end
@@ -399,7 +399,7 @@ function Pos.intake(src, shopId)
     for name, amount in pairs(moved) do summary[#summary + 1] = ('%dx %s'):format(amount, name) end
     table.sort(summary)
 
-    QB.notify.send(src, {
+    Kora.notify.send(src, {
         title = Config.notifyTitle,
         message = module.commission > 0
             and ('Stocked %s. Commission is paid as this stock sells.'):format(table.concat(summary, ', '))
@@ -408,7 +408,7 @@ function Pos.intake(src, shopId)
     })
 
     if next(rejected) then
-        QB.notify.send(src, { title = Config.notifyTitle, message = 'Some items were left behind: this till does not stock them.', type = 'warning' })
+        Kora.notify.send(src, { title = Config.notifyTitle, message = 'Some items were left behind: this till does not stock them.', type = 'warning' })
     end
 
     Logs.record(business, {
@@ -475,7 +475,7 @@ AddEventHandler('qbinventory:server:audit', function(action, src, details)
                 local paid = exports.kora_core:addMoney(employee.source, 'bank', requested, 'qbjobcreator-sale-commission')
                 if paid then
                     commission = requested
-                    QB.notify.send(employee.source, {
+                    Kora.notify.send(employee.source, {
                         title = Config.notifyTitle,
                         message = ('Stock commission: $%d'):format(commission),
                         type = 'success',
@@ -518,20 +518,20 @@ local function tillContext(src, shopId, requireBoss)
     return business, record.module
 end
 
-QB.callback.register('qbjobcreator:server:openShop', function(src, shopId)
+Kora.callback.register('qbjobcreator:server:openShop', function(src, shopId)
     local record = shops[shopId]
     if not record then return false, 'Unknown till.' end
     return exports.kora_inventory:OpenInventory(src, record.module.id, { type = 'shop', id = record.module.id })
 end, { rateLimit = { max = 10, window = 10000 } })
 
-QB.callback.register('qbjobcreator:server:openStock', function(src, shopId)
+Kora.callback.register('qbjobcreator:server:openStock', function(src, shopId)
     local _, _, err = tillContext(src, shopId)
     if err then return false, err end
     return exports.kora_inventory:stashOpen(src, stockId(shopId))
 end, { rateLimit = { max = 10, window = 10000 } })
 
 ---The current shelf, as a boss-facing price list.
-QB.callback.register('qbjobcreator:server:tillPrices', function(src, shopId)
+Kora.callback.register('qbjobcreator:server:tillPrices', function(src, shopId)
     local _, module, err = tillContext(src, shopId, true)
     if err then return nil, err end
     local shelf = exports.kora_inventory:GetShopItems(shopId) or {}
@@ -547,7 +547,7 @@ QB.callback.register('qbjobcreator:server:tillPrices', function(src, shopId)
     return { shop = shopId, label = module.label, max = Config.pos.maxPrice, items = rows }
 end, { rateLimit = { max = 10, window = 10000 } })
 
-QB.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId, slot, price)
+Kora.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId, slot, price)
     local business, module, err = tillContext(src, shopId, true)
     if err then return false, err end
 
@@ -574,7 +574,7 @@ QB.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId, s
     return true
 end, { rateLimit = { max = 20, window = 10000 } })
 
-QB.callback.register('qbjobcreator:server:panic', function(src, businessId, shopId)
+Kora.callback.register('qbjobcreator:server:panic', function(src, businessId, shopId)
     local record = shops[shopId]
     local business = State.get(businessId)
     if not business or not record or record.businessId ~= business.id then return false, 'Unknown till.' end

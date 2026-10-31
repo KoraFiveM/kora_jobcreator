@@ -58,7 +58,7 @@ H.ok(staff:find('if prune() then publish() end', 1, true), 'stale presence is pe
 -- move. An unlimited one is a free denial-of-service against the server.
 for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
     local registrations, limited = 0, 0
-    for chunk in source:gmatch("QB%.callback%.register%('qbjobcreator:server:.-\nend[^\n]*") do
+    for chunk in source:gmatch("Kora%.callback%.register%('qbjobcreator:server:.-\nend[^\n]*") do
         registrations = registrations + 1
         if chunk:find('rateLimit', 1, true) then limited = limited + 1 end
     end
@@ -66,7 +66,7 @@ for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
     -- callback whose body confuses it, quietly skipping the one registration
     -- that was missing a limit. Compare against a plain count of declarations
     -- so a skipped body fails rather than passes.
-    local declared = select(2, source:gsub("QB%.callback%.register%('qbjobcreator:server:", ''))
+    local declared = select(2, source:gsub("Kora%.callback%.register%('qbjobcreator:server:", ''))
     H.ok(declared > 0, 'the file registers server callbacks')
     H.equal(registrations, declared, 'every registration body was inspected')
     H.equal(limited, registrations, 'every server callback carries a rate limit')
@@ -77,7 +77,7 @@ end
 H.ok(crafting:find('Config.recipes[id]', 1, true), 'a recipe is resolved from shared config')
 H.ok(crafting:find("if id == recipeId then offered = true", 1, true),
     'a recipe must be offered by the bench being used, not merely exist')
-H.ok(crafting:find('QB.distance.player(src, anchor', 1, true), 'crafting revalidates the distance server-side')
+H.ok(crafting:find('Kora.distance.player(src, anchor', 1, true), 'crafting revalidates the distance server-side')
 H.nope(crafting:find('function(src, recipe)\n', 1, true), 'no callback accepts a client-supplied recipe table')
 
 H.ok(pos:find('Pos.accepts(shopId', 1, true), 'the till decides what it stocks')

@@ -46,7 +46,7 @@ known.
 No anchor. `coords`, `category` (default `Business`), optional location or
 storefront `name`, `sprite`, `color`, `scale`, `display`, `shortRange`.
 The in-game creator obtains its category select from
-`QB.blips.getCategoryIds()`, so it cannot persist an unknown category.
+`Kora.blips.getCategoryIds()`, so it cannot persist an unknown category.
 
 ### `StaticEntity` — decoration
 Entity anchor only. No interaction.

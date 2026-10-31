@@ -43,7 +43,7 @@ env.CreateThread, env.Wait, env.RegisterCommand = noop, noop, noop
 env.AddEventHandler = function(name, callback) handlers[name] = handlers[name] or {}; handlers[name][#handlers[name] + 1] = callback end
 env.RegisterNetEvent = env.AddEventHandler
 env.TriggerClientEvent, env.TriggerEvent = noop, noop
-env.QB = {
+env.Kora = {
     resources = {}, compat = { isCallable = function(value) return type(value) == 'function' end },
     callback = { register = noop }, sql = {},
 }
@@ -66,7 +66,7 @@ job.json = {
     encode = function(value) serial = serial + 1; local token = tostring(serial); encoded[token] = copy(value); return token end,
     decode = function(token) return copy(encoded[token]) end,
 }
-job.QB = {
+job.Kora = {
     blips = { getCategoryIds = function() return {} end },
     util = { fnv1a = function() return 'test-revision' end },
     sql = { execute = function() if failWrite then return nil, 'controlled failure' end; return true end },
@@ -77,7 +77,7 @@ job.QB = {
         local result = {}; for _ = 1, options.rolls do result[#result + 1] = copy(pool[1]) end; return result
     end },
 }
-job.QB.sql.transaction = function() return not failWrite end
+job.Kora.sql.transaction = function() return not failWrite end
 local inventoryExports = {}
 for name, fn in pairs(native) do inventoryExports[name] = function(_, ...) return fn(...) end end
 local create = inventoryExports.createUseable

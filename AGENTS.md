@@ -56,7 +56,7 @@ duty and live ped proximity on the server. Cached presence is never authority.
 
 ## Threading
 
-`QB.zones`' tick and the target loop behind `QB.interact` are **shared across
+`Kora.zones`' tick and the target loop behind `Kora.interact` are **shared across
 every resource on the server**. Both invoke callbacks this resource supplies, and nearly
 everything here yields — streaming a prop, opening a dialog, calling the
 server. Yielding in one of those callbacks stalls every zone or every target in
@@ -69,7 +69,7 @@ build thread checks it before finishing so a player who walks straight back out
 does not leave orphaned props and target registrations behind.
 
 There is no `cache` and no `lib` global here — those are ox_lib. Use
-`PlayerPedId()` / `GetVehiclePedIsIn` and `QB.*`. `test/smoke/client.lua` greps
+`PlayerPedId()` / `GetVehiclePedIsIn` and `Kora.*`. `test/smoke/client.lua` greps
 for both.
 
 ## Replication

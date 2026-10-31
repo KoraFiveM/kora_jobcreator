@@ -20,7 +20,7 @@ local Business = {}
 QbJobCreator.Business = Business
 
 -- kora_lib owns normal entity and zone interactions. kora_target remains a narrow
--- fallback for polygon interaction zones, which QB.interact does not expose.
+-- fallback for polygon interaction zones, which Kora.interact does not expose.
 local target = exports.kora_target
 
 ---@class QBBossMenuClientExports
@@ -33,18 +33,18 @@ end
 ---@param scope table
 local function clearScope(scope)
     for _, zone in ipairs(scope.zones) do pcall(zone.remove) end
-    for _, blip in ipairs(scope.blips) do QB.blips.remove(blip) end
+    for _, blip in ipairs(scope.blips) do Kora.blips.remove(blip) end
     for _, registration in ipairs(scope.targets) do
         if registration.kind == 'interact-zone' then
-            QB.interact.removeZone(registration.name)
+            Kora.interact.removeZone(registration.name)
         elseif registration.kind == 'entity' then
-            QB.interact.removeEntity(registration.entity, registration.id)
+            Kora.interact.removeEntity(registration.entity, registration.id)
         else
             target:removeZone(registration.id)
         end
     end
     -- Entities last: a target registration still points at them.
-    for _, entity in ipairs(scope.entities) do QB.entities.remove(entity) end
+    for _, entity in ipairs(scope.entities) do Kora.entities.remove(entity) end
     scope.zones, scope.blips, scope.entities, scope.targets = {}, {}, {}, {}
 end
 
@@ -63,7 +63,7 @@ end
 ---@param name string
 ---@return string
 local function itemLabel(name)
-    local definition = QB.shared.get('items', name)
+    local definition = Kora.shared.get('items', name)
     return (definition and definition.label) or name
 end
 
@@ -126,7 +126,7 @@ function Business.enter(business)
             if business.controlDuty and Config.duty.enabled then Business.setDuty(business, true) end
             -- Presence means on-duty staff. Auto-duty therefore commits first;
             -- the following callback is independently revalidated server-side.
-            QB.callback.trigger('qbjobcreator:server:enter', business.id)
+            Kora.callback.trigger('qbjobcreator:server:enter', business.id)
         end
     end)
 end
@@ -141,7 +141,7 @@ function Business.leave(business, teardownOnly)
 
     if Client.worksFor(business) then
         CreateThread(function()
-            QB.callback.trigger('qbjobcreator:server:leave', business.id)
+            Kora.callback.trigger('qbjobcreator:server:leave', business.id)
             if business.controlDuty and Config.duty.enabled then Business.setDuty(business, false) end
         end)
     end
@@ -161,7 +161,7 @@ function Business.setDuty(business, onDuty)
         end
     end
 
-    QB.callback.trigger('qbjobcreator:server:setDuty', business.id, onDuty)
+    Kora.callback.trigger('qbjobcreator:server:setDuty', business.id, onDuty)
 end
 
 -- ---------------------------------------------------------------------------
@@ -180,7 +180,7 @@ function Business.spawn(business, scope, module)
             local existing = GetClosestObjectOfType(coords.x, coords.y, coords.z, 1.5, joaat(module.model.model), false, false, false)
             if existing ~= 0 then entities[#entities + 1] = existing end
         else
-            local entity = QB.entities.create(module.model.model, Client.vec4(coords), {
+            local entity = Kora.entities.create(module.model.model, Client.vec4(coords), {
                 preset = 'static',
                 freeze = module.model.freeze ~= false,
             })
@@ -188,7 +188,7 @@ function Business.spawn(business, scope, module)
                 scope.entities[#scope.entities + 1] = entity
                 entities[#entities + 1] = entity
                 if module.model.anim and module.model.modelType == 'ped' then
-                    QB.anim.play(entity, module.model.anim.dict, module.model.anim.clip, { flag = module.model.anim.flag })
+                    Kora.anim.play(entity, module.model.anim.dict, module.model.anim.clip, { flag = module.model.anim.flag })
                 end
             end
         end
@@ -212,13 +212,13 @@ function Business.attach(business, scope, index, module, entities, options)
         -- kora_target invokes a single-candidate onSelect on its own tick thread.
         -- Nearly everything here yields (a callback, a dialog, a progress bar),
         -- which would stall targeting for as long as the menu is open -- and
-        -- QB.callback.trigger has to be inside a coroutine anyway.
+        -- Kora.callback.trigger has to be inside a coroutine anyway.
         local select_ = option.onSelect
         local function runSelection(...)
             local args = table.pack(...)
             CreateThread(function() select_(table.unpack(args, 1, args.n)) end)
         end
-        -- QB.interact dispatches `action`; kora_target's polygon fallback invokes
+        -- Kora.interact dispatches `action`; kora_target's polygon fallback invokes
         -- `onSelect`. Keep both pointed at the same yield-safe wrapper.
         option.action = runSelection
         option.onSelect = runSelection
@@ -237,7 +237,7 @@ function Business.attach(business, scope, index, module, entities, options)
     if #entities > 0 then
         for _, entity in ipairs(entities) do
             scope.targets[#scope.targets + 1] = {
-                kind = 'entity', entity = entity, id = QB.interact.addEntity(entity, options, module.distance),
+                kind = 'entity', entity = entity, id = Kora.interact.addEntity(entity, options, module.distance),
             }
         end
         return
@@ -246,11 +246,11 @@ function Business.attach(business, scope, index, module, entities, options)
     local id
     local name = ('qbjobcreator:%s:%d'):format(business.id, index)
     if module.zoneType == 'sphere' then
-        id = QB.interact.addCircleZone(name, Client.vec3(module.coords), module.radius, {
+        id = Kora.interact.addCircleZone(name, Client.vec3(module.coords), module.radius, {
             options = options,
         }, Client.debug)
     elseif module.zoneType == 'box' then
-        id = QB.interact.addBoxZone(name, Client.vec3(module.coords),
+        id = Kora.interact.addBoxZone(name, Client.vec3(module.coords),
             vector4(module.size.x, module.size.y, module.size.z, module.rotation), {
                 options = options,
             }, Client.debug)
@@ -272,7 +272,7 @@ end
 ---@param scope table
 ---@param blip table
 local function addBlip(scope, blip)
-    local handle = QB.blips.create(vector3(blip.coords.x, blip.coords.y, blip.coords.z), {
+    local handle = Kora.blips.create(vector3(blip.coords.x, blip.coords.y, blip.coords.z), {
         sprite = blip.sprite, color = blip.color, scale = blip.scale, display = blip.display,
         shortRange = blip.shortRange, category = blip.category, name = blip.name,
         info = blip.info or {
@@ -320,7 +320,7 @@ builders.Zone = function(business, scope, _, module)
         for _, point in ipairs(module.points) do points[#points + 1] = Client.vec3(point) end
         opts.points, opts.thickness = points, module.thickness
     end
-    scope.zones[#scope.zones + 1] = QB.zones[module.zoneType](opts)
+    scope.zones[#scope.zones + 1] = Kora.zones[module.zoneType](opts)
 end
 
 builders.Blip = function(_, scope, _, module)
@@ -354,7 +354,7 @@ builders.Stash = function(_, _, _, module)
         label = module.label,
         icon = module.icon or 'Archive',
         onSelect = function()
-            local ok, err = QB.callback.trigger('qbjobcreator:server:openStash', module.id)
+            local ok, err = Kora.callback.trigger('qbjobcreator:server:openStash', module.id)
             if not ok then Client.notify(err or 'You cannot open that.', 'error') end
         end,
     } }
@@ -374,7 +374,7 @@ builders.POS = function(business, _, _, module)
             return (Client.staff[business.id] or 0) == 0
         end,
         onSelect = function()
-            local ok, err = QB.callback.trigger('qbjobcreator:server:openShop', module.id)
+            local ok, err = Kora.callback.trigger('qbjobcreator:server:openShop', module.id)
             if not ok then Client.notify(err or 'The till is closed.', 'error') end
         end,
     }
@@ -387,7 +387,7 @@ builders.POS = function(business, _, _, module)
         icon = 'PackagePlus',
         canInteract = function() return Client.worksFor(business) end,
         onSelect = function()
-            local ok, err = QB.callback.trigger('qbjobcreator:server:openStock', module.id)
+            local ok, err = Kora.callback.trigger('qbjobcreator:server:openStock', module.id)
             if not ok then Client.notify(err or 'You cannot restock this till.', 'error') end
         end,
     }
@@ -412,7 +412,7 @@ builders.POS = function(business, _, _, module)
             icon = 'Siren',
             canInteract = function() return Client.worksFor(business) end,
             onSelect = function()
-                local ok, err = QB.callback.trigger('qbjobcreator:server:panic', business.id, module.id)
+                local ok, err = Kora.callback.trigger('qbjobcreator:server:panic', business.id, module.id)
                 Client.notify(ok and 'Silent alarm sent.' or (err or 'The alarm did not go through.'), ok and 'success' or 'error')
             end,
         }
@@ -450,14 +450,14 @@ local function openCraftingMenu(business, index, module)
 
     if #items == 0 then return Client.notify('There is nothing to make here.', 'error') end
 
-    local choice = QB.nui.openMenu(items, module.label)
+    local choice = Kora.nui.openMenu(items, module.label)
     if not choice or choice.cancelled or not choice.selectedId then return end
 
     local recipe = Config.recipes[choice.selectedId]
     if not recipe then return end
 
     if recipe.time then
-        local completed = QB.progressbar.start({
+        local completed = Kora.progressbar.start({
             label = recipe.progressLabel or ('Making %s'):format(recipe.label or choice.selectedId),
             duration = math.floor(recipe.time),
             canCancel = true,
@@ -467,7 +467,7 @@ local function openCraftingMenu(business, index, module)
         if not completed then return end
     end
 
-    local ok, message = QB.callback.trigger('qbjobcreator:server:craft', business.id, index, choice.selectedId)
+    local ok, message = Kora.callback.trigger('qbjobcreator:server:craft', business.id, index, choice.selectedId)
     Client.notify(message or (ok and 'Done.' or 'That did not work.'), ok and 'success' or 'error')
 end
 

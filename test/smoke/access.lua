@@ -18,7 +18,7 @@ exports = {
         setJobDuty = function(_, src, value) players[src].job.onduty = value; return true end,
     },
 }
-QB = {
+Kora = {
     util = { fnv1a = function() return '811c9dc5' end },
     distance = {
         player = function(src, point, distance)

@@ -128,18 +128,18 @@ CreateThread(function()
     end
 end)
 
-QB.callback.register('qbjobcreator:server:enter', function(src, businessId)
+Kora.callback.register('qbjobcreator:server:enter', function(src, businessId)
     return Staff.enter(src, businessId)
 end, { rateLimit = { max = 20, window = 10000 } })
 
-QB.callback.register('qbjobcreator:server:leave', function(src, businessId)
+Kora.callback.register('qbjobcreator:server:leave', function(src, businessId)
     return Staff.leave(src, businessId)
 end, { rateLimit = { max = 20, window = 10000 } })
 
 ---Auto duty. The client decides WHEN (it owns the perimeter), the server
 ---decides WHETHER: it re-reads the caller's real job rather than trusting the
 ---business id to imply one.
-QB.callback.register('qbjobcreator:server:setDuty', function(src, businessId, onDuty)
+Kora.callback.register('qbjobcreator:server:setDuty', function(src, businessId, onDuty)
     if not Config.duty.enabled then return false, 'Automatic duty is disabled.' end
     local business = State.get(businessId)
     if not business then return false, 'Unknown business.' end
@@ -160,7 +160,7 @@ QB.callback.register('qbjobcreator:server:setDuty', function(src, businessId, on
     local ok, err = exports.kora_core:setJobDuty(src, onDuty == true)
     if not ok then return false, err end
     if onDuty ~= true then forget(src) end
-    QB.notify.send(src, {
+    Kora.notify.send(src, {
         title = Config.notifyTitle,
         message = ('You are now %s duty.'):format(onDuty and 'on' or 'off'),
         type = 'info',

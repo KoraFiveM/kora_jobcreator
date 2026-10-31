@@ -30,7 +30,7 @@ H.ok(manifest:find("'@kora_core/init.lua'", 1, true), 'loads the qbcore mirror')
 H.ok(manifest:find("'shared/schema.lua'", 1, true), 'the schema is shared by both realms')
 H.ok(manifest:find("'config.lua',", 1, true), 'config loads before the shared files that append to it')
 H.ok(manifest:find('sql/001_businesses.sql', 1, true), 'the migration is a packaged file')
-H.ok(client:find('QB.blips.getCategoryIds()', 1, true),
+H.ok(client:find('Kora.blips.getCategoryIds()', 1, true),
     'the creator category select comes from kora_lib instead of free text')
 H.ok(client:find("type = 'select'", 1, true) and client:find("default = 'Business'", 1, true),
     'the creator offers a safe category selection with a Business fallback')
@@ -54,8 +54,8 @@ end
 -- --- callbacks agree across the boundary -----------------------------------
 
 local registered, triggered = {}, {}
-for name in server:gmatch("QB%.callback%.register%('(qbjobcreator:server:[%w:]+)'") do registered[name] = true end
-for name in client:gmatch("QB%.callback%.trigger%('(qbjobcreator:server:[%w:]+)'") do triggered[name] = true end
+for name in server:gmatch("Kora%.callback%.register%('(qbjobcreator:server:[%w:]+)'") do registered[name] = true end
+for name in client:gmatch("Kora%.callback%.trigger%('(qbjobcreator:server:[%w:]+)'") do triggered[name] = true end
 
 local triggerCount = 0
 for name in pairs(triggered) do
@@ -65,8 +65,8 @@ end
 H.ok(triggerCount >= 10, 'the client actually exercises the server surface')
 
 local clientRegistered, serverTriggered = {}, {}
-for name in client:gmatch("QB%.callback%.register%('(qbjobcreator:client:[%w:]+)'") do clientRegistered[name] = true end
-for name in server:gmatch("QB%.callback%.trigger%(%w+, '(qbjobcreator:client:[%w:]+)'") do serverTriggered[name] = true end
+for name in client:gmatch("Kora%.callback%.register%('(qbjobcreator:client:[%w:]+)'") do clientRegistered[name] = true end
+for name in server:gmatch("Kora%.callback%.trigger%(%w+, '(qbjobcreator:client:[%w:]+)'") do serverTriggered[name] = true end
 for name in pairs(serverTriggered) do
     H.ok(clientRegistered[name], ('the server asks %s and the client answers it'):format(name))
 end
@@ -131,7 +131,7 @@ end
 --
 -- Two of kora_core's reads take shapes that fail SILENTLY when you get them wrong:
 -- `getPlayerData`'s path is an array of keys (a bare string walks a string and
--- resolves to nil), and `QB.shared.all` returns a dense array of records whose
+-- resolves to nil), and `Kora.shared.all` returns a dense array of records whose
 -- key lives on the record as `.name` (pairs() over it yields integers).
 for realm, source in pairs({ client = client, server = server }) do
     for call in source:gmatch("getPlayerData%(([^)]*)%)") do
@@ -140,15 +140,15 @@ for realm, source in pairs({ client = client, server = server }) do
     end
 end
 -- The leading space matters: 'ipairs(' contains 'pairs(' as a substring.
-H.nope(server:find(' pairs(QB.shared.all', 1, true), 'QB.shared.all is never iterated with pairs')
-H.ok(server:find('ipairs(QB.shared.all', 1, true), 'the job list reads the dense array')
+H.nope(server:find(' pairs(Kora.shared.all', 1, true), 'Kora.shared.all is never iterated with pairs')
+H.ok(server:find('ipairs(Kora.shared.all', 1, true), 'the job list reads the dense array')
 
 -- --- teardown --------------------------------------------------------------
 
 H.ok(client:find('onClientResourceStop', 1, true), 'the client cleans up when the resource stops')
 H.ok(client:find('Business.destroy(business)', 1, true), 'every live business is destroyed on stop')
-H.ok(client:find('QB.entities.remove', 1, true), 'spawned props are removed')
-H.ok(client:find('QB.blips.remove', 1, true), 'blips are removed')
+H.ok(client:find('Kora.entities.remove', 1, true), 'spawned props are removed')
+H.ok(client:find('Kora.blips.remove', 1, true), 'blips are removed')
 H.ok(client:find('removeZone', 1, true) and client:find('removeEntity', 1, true),
     'target registrations are removed')
 

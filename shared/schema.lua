@@ -18,7 +18,7 @@ QbJobCreator.schema = S
 
 local MAX_POLY_POINTS = 64
 local MAX_ENTITY_COORDS = 32
-local BLIP_CATEGORY_IDS = QB.blips.getCategoryIds()
+local BLIP_CATEGORY_IDS = Kora.blips.getCategoryIds()
 
 ---@param value any
 ---@param maxLength? integer

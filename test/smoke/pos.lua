@@ -68,7 +68,7 @@ exports = {
         end,
     },
 }
-QB = {
+Kora = {
     sql = { executeAsync = function() end, query = function() return {} end },
     callback = { register = function() end, trigger = function() return nil end },
     notify = { send = function() end },

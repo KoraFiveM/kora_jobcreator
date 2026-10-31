@@ -122,7 +122,7 @@ end
 ---qbinventory already gates the stash on its own `groups`, so this is not the
 ---security boundary -- it exists so a player who cannot open a stash is told
 ---why instead of watching nothing happen.
-QB.callback.register('qbjobcreator:server:openStash', function(src, stashId)
+Kora.callback.register('qbjobcreator:server:openStash', function(src, stashId)
     local record = type(stashId) == 'string' and stashes[stashId] or nil
     if not record then return false, 'Unknown stash.' end
     local business = State.get(record.businessId)

@@ -11,7 +11,7 @@ local stateSource = read(statePath)
 
 local callbacks, published, exported, jobs, registrations, logs = {}, {}, {}, {}, {}, {}
 local startupOrder = {}
-QB = {
+Kora = {
     util = {}, compat = {},
     blips = { getCategoryIds = function() return { Business = 15, Restaurant = 34 } end },
     shared = {
@@ -24,7 +24,7 @@ QB = {
     end },
 }
 dofile('../kora_lib/modules/util/shared.lua')
-local clone = QB.util.deepClone
+local clone = Kora.util.deepClone
 local encoded = {}
 local function stable(value)
     if type(value) == 'string' then return ('%q'):format(value) end
@@ -73,11 +73,11 @@ local function driverMigrate(_, resource, migrations, callback)
     eq(resource, 'kora_jobcreator', 'actual main preserves migration resource name')
     eq(#migrations, 2, 'actual main registers both schema migrations')
     eq(migrations[1].version, 1, 'original migration version preserved')
-    eq(migrations[1].checksum, QB.util.fnv1a(migrations[1].sql), 'actual migrateFiles computes original migration checksum')
+    eq(migrations[1].checksum, Kora.util.fnv1a(migrations[1].sql), 'actual migrateFiles computes original migration checksum')
     eq(migrations[2].version, 2, 'new marker migration has additive version')
     eq(migrations[2].sql:find('CREATE TABLE IF NOT EXISTS `qbjobcreator_deleted`', 1, true) ~= nil, true,
         'new table migration uses existing retry-safe runner shape')
-    eq(migrations[2].checksum, QB.util.fnv1a(migrations[2].sql), 'actual migrateFiles fingerprints added file')
+    eq(migrations[2].checksum, Kora.util.fnv1a(migrations[2].sql), 'actual migrateFiles fingerprints added file')
     callback({ ran = 2, total = 2 })
 end
 local function driverTransaction(_, queries, ...)

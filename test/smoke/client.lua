@@ -64,13 +64,13 @@ for _, kind in ipairs({ 'zones', 'blips', 'targets', 'entities' }) do
 end
 H.ok(clear:find('pcall(zone.remove)', 1, true),
     'a zone handle exposes a plain remove function, not a method')
-H.ok(business:find('QB.interact.addEntity', 1, true)
-    and business:find('QB.interact.addCircleZone', 1, true)
-    and business:find('QB.interact.addBoxZone', 1, true),
+H.ok(business:find('Kora.interact.addEntity', 1, true)
+    and business:find('Kora.interact.addCircleZone', 1, true)
+    and business:find('Kora.interact.addBoxZone', 1, true),
     'entity, sphere and box interactions use kora_lib')
 H.ok(business:find("module.zoneType == 'poly'", 1, true)
     and business:find('target:addPolyZone', 1, true),
-    'qbtarget is retained only for polygon interactions unsupported by QB.interact')
+    'qbtarget is retained only for polygon interactions unsupported by Kora.interact')
 -- Entities must go last: a target registration still points at them.
 H.ok(clear:find('scope.targets', 1, true) < clear:find('for _, entity in ipairs(scope.entities)', 1, true),
     'targets are removed before the entities they point at')
@@ -79,17 +79,17 @@ H.ok(clear:find('scope.targets', 1, true) < clear:find('for _, entity in ipairs(
 
 H.nope(creator:find('SaveResourceFile', 1, true), 'the builder never writes a file')
 H.nope(creator:find('setClipboard', 1, true), 'the builder never hands back a snippet to paste')
-H.ok(creator:find("QB.callback.trigger('qbjobcreator:server:saveModule'", 1, true),
+H.ok(creator:find("Kora.callback.trigger('qbjobcreator:server:saveModule'", 1, true),
     'a built module goes straight to the server')
-H.ok(creator:find('QB.zones.startCreator', 1, true), 'zones are placed in-world')
-H.ok(creator:find('QB.placement.start', 1, true), 'props are placed in-world')
-H.ok(creator:find('QB.raycast.fromCamera', 1, true), 'an existing object is picked by looking at it')
+H.ok(creator:find('Kora.zones.startCreator', 1, true), 'zones are placed in-world')
+H.ok(creator:find('Kora.placement.start', 1, true), 'props are placed in-world')
+H.ok(creator:find('Kora.raycast.fromCamera', 1, true), 'an existing object is picked by looking at it')
 
 -- --- AppShell management and editor resume ---------------------------------
 
 H.ok(creator:find("local APP_ID = 'qbjobcreator:management'", 1, true),
     'the management console has one namespaced AppShell id')
-H.ok(creator:find('QB.nui.registerApp(definition)', 1, true),
+H.ok(creator:find('Kora.nui.registerApp(definition)', 1, true),
     'business management is registered with AppShell')
 H.ok(creator:find("openManagement(state, 'management', 'modules')", 1, true),
     'the console resumes on the selected business module tab after an editor')
@@ -103,9 +103,9 @@ H.ok(creator:find('state.moduleIndex = position or index', 1, true),
 H.ok(creator:find('function Creator.refresh()', 1, true)
     and main:find('Creator.refresh()', 1, true),
     'replicated business and staff changes refresh an open management console')
-H.ok(creator:find("QB.callback.trigger('qbjobcreator:server:removeModule'", 1, true)
-    and creator:find("QB.callback.trigger('qbjobcreator:server:editBusiness'", 1, true)
-    and creator:find("QB.callback.trigger('qbjobcreator:server:deleteBusiness'", 1, true),
+H.ok(creator:find("Kora.callback.trigger('qbjobcreator:server:removeModule'", 1, true)
+    and creator:find("Kora.callback.trigger('qbjobcreator:server:editBusiness'", 1, true)
+    and creator:find("Kora.callback.trigger('qbjobcreator:server:deleteBusiness'", 1, true),
     'AppShell actions still submit intent through the authoritative server callbacks')
 
 local crafting = creator:match('fieldsFor%.Crafting = function%(%).-\nend')

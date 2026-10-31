@@ -9,9 +9,9 @@ local source = read(logsPath)
 
 local sqlRecords, logRecords, queued, httpRecords, embeds = {}, {}, {}, {}, {}
 local convarReads = 0
-QB = { util = {}, discord = {}, compat = { isCallable = function(value) return type(value) == 'function' end } }
+Kora = { util = {}, discord = {}, compat = { isCallable = function(value) return type(value) == 'function' end } }
 dofile('../kora_lib/modules/util/shared.lua')
-local clone = QB.util.deepClone
+local clone = Kora.util.deepClone
 local snapshots, nextToken = {}, 0
 json = {
     encode = function(value) nextToken = nextToken + 1; local token = 'snapshot:' .. nextToken; snapshots[token] = clone(value); return token end,
@@ -28,21 +28,21 @@ PerformHttpRequest = function(url, callback, method, body, headers)
     callback(204, '', {}, '')
 end
 dofile('../kora_lib/modules/discord/server.lua')
-local createEmbed, sendWebhook = QB.discord.createEmbed, QB.discord.sendWebhook
-QB.discord.createEmbed = function(options)
+local createEmbed, sendWebhook = Kora.discord.createEmbed, Kora.discord.sendWebhook
+Kora.discord.createEmbed = function(options)
     local embed = createEmbed(options); embeds[#embeds + 1] = clone(embed); return embed
 end
-QB.discord.sendWebhook = function(url, payload, callback)
+Kora.discord.sendWebhook = function(url, payload, callback)
     local result = sendWebhook(url, payload, callback)
     queued[#queued + 1] = { url = url, payload = clone(payload), result = result, callback = callback }
     return result
 end
-QB.sql = { insertAsync = function(sql, params, callback)
+Kora.sql = { insertAsync = function(sql, params, callback)
     eq(sql:find('INSERT INTO `qbjobcreator_logs`', 1, true) ~= nil, true, 'existing append-only log table remains')
     sqlRecords[#sqlRecords + 1] = { sql = sql, params = clone(params) }
     callback(1)
 end }
-QB.logging = { event = function(name, src, values)
+Kora.logging = { event = function(name, src, values)
     logRecords[#logRecords + 1] = { name = name, src = src, values = clone(values) }
 end }
 exports = { kora_core = { getPlayerData = function(_, src)
@@ -124,5 +124,5 @@ eq(#embeds[1].fields, 3, 'existing business/player/extra field ordering preserve
 eq(embeds[1].fields[1].name, 'Business', 'business field remains first')
 eq(embeds[1].fields[2].value, 'Fixture Person (1)', 'existing actor name fallback preserved')
 eq(embeds[1].fields[3].inline, false, 'actual createEmbed preserves explicit false field option')
-eq(convarReads, 0, 'missing QB resource candidates do not introduce kora_lib convar fallback')
+eq(convarReads, 0, 'missing Kora resource candidates do not introduce kora_lib convar fallback')
 H.finish('webhook_fallback')

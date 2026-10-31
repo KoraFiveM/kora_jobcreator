@@ -9,11 +9,11 @@ local Logs = QbJobCreator.logs
 local RESOURCE = GetCurrentResourceName()
 
 CreateThread(function()
-    if not QB.sql.ready(60000) then
+    if not Kora.sql.ready(60000) then
         return print('^1[qbjobcreator]^7 qbsql was not ready; resource disabled.')
     end
 
-    local _, err = QB.sql.migrateFiles(RESOURCE, {
+    local _, err = Kora.sql.migrateFiles(RESOURCE, {
         { version = 1, name = 'businesses', file = 'sql/001_businesses.sql' },
         { version = 2, name = 'deleted', file = 'sql/002_deleted.sql' },
     })

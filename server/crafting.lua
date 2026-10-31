@@ -126,7 +126,7 @@ function Crafting.craft(src, recipe, business)
     return true, recipe.completeLabel or ('You made %s.'):format(table.concat(given, ', '))
 end
 
-QB.callback.register('qbjobcreator:server:craft', function(src, businessId, moduleIndex, recipeId)
+Kora.callback.register('qbjobcreator:server:craft', function(src, businessId, moduleIndex, recipeId)
     local business = State.get(businessId)
     if not business then return false, 'Unknown business.' end
 
@@ -145,7 +145,7 @@ QB.callback.register('qbjobcreator:server:craft', function(src, businessId, modu
     if not recipe then return false, 'Unknown recipe.' end
 
     local anchor = module.zoneType and module.coords or (module.coords and module.coords[1])
-    if anchor and not QB.distance.player(src, anchor, 8.0) then
+    if anchor and not Kora.distance.player(src, anchor, 8.0) then
         return false, 'You are not at the bench.'
     end
 
@@ -167,7 +167,7 @@ function Crafting.registerUseable(business, module, binding)
         if not business or not module then return false end
         local consume = module.consume
         if consume > 0 and not exports.kora_core:removeItem(src, module.item, consume) then
-            return QB.notify.send(src, { title = Config.notifyTitle, message = 'You do not have that.', type = 'error' })
+            return Kora.notify.send(src, { title = Config.notifyTitle, message = 'You do not have that.', type = 'error' })
         end
 
         local ok, message
@@ -179,7 +179,7 @@ function Crafting.registerUseable(business, module, binding)
                 ok, message = Crafting.craft(src, recipe, business)
             end
         else
-            local rewards = QB.rewards.generate(module.rewards, { mode = 'weighted', rolls = module.rolls })
+            local rewards = Kora.rewards.generate(module.rewards, { mode = 'weighted', rolls = module.rolls })
             local given = {}
             for _, reward in ipairs(rewards) do
                 local name = reward.item or reward.name
@@ -198,7 +198,7 @@ function Crafting.registerUseable(business, module, binding)
             exports.kora_core:addItem(src, module.item, consume)
         end
 
-        QB.notify.send(src, {
+        Kora.notify.send(src, {
             title = Config.notifyTitle, message = message or 'Nothing happened.',
             type = ok and 'success' or 'error',
         })

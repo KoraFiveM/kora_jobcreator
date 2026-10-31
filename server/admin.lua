@@ -37,7 +37,7 @@ local function authorise(src, businessId, requireAdmin)
     return business
 end
 
-QB.callback.register('qbjobcreator:server:hydrate', function(src)
+Kora.callback.register('qbjobcreator:server:hydrate', function(src)
     return {
         businesses = State.snapshot(),
         staff = Staff.counts(),
@@ -47,12 +47,12 @@ QB.callback.register('qbjobcreator:server:hydrate', function(src)
 end, { rateLimit = { max = 5, window = 10000 } })
 
 ---The job list an admin picks from when creating a business.
-QB.callback.register('qbjobcreator:server:jobs', function(src)
+Kora.callback.register('qbjobcreator:server:jobs', function(src)
     if not State.isAdmin(src) then return nil, 'You cannot edit businesses.' end
-    -- `QB.shared.all` returns a dense ARRAY of records, not a name-keyed map --
+    -- `Kora.shared.all` returns a dense ARRAY of records, not a name-keyed map --
     -- the key lives on the record as `.name`.
     local jobs = {}
-    for _, job in ipairs(QB.shared.all('jobs') or {}) do
+    for _, job in ipairs(Kora.shared.all('jobs') or {}) do
         if job.name and job.name ~= 'unemployed' then
             jobs[#jobs + 1] = { value = job.name, label = job.label or job.name }
         end
@@ -61,7 +61,7 @@ QB.callback.register('qbjobcreator:server:jobs', function(src)
     return jobs
 end, { rateLimit = { max = 5, window = 10000 } })
 
-QB.callback.register('qbjobcreator:server:createBusiness', function(src, payload)
+Kora.callback.register('qbjobcreator:server:createBusiness', function(src, payload)
     if not State.ready then return nil, 'Businesses are still loading.' end
     if not State.isAdmin(src) then return nil, 'You cannot create businesses.' end
     if type(payload) ~= 'table' then return nil, 'Invalid business.' end
@@ -78,7 +78,7 @@ QB.callback.register('qbjobcreator:server:createBusiness', function(src, payload
     return business.id
 end, { rateLimit = { max = 5, window = 30000 } })
 
-QB.callback.register('qbjobcreator:server:editBusiness', function(src, businessId, payload)
+Kora.callback.register('qbjobcreator:server:editBusiness', function(src, businessId, payload)
     local business, err = authorise(src, businessId, true)
     if not business then return false, err end
     if type(payload) ~= 'table' then return false, 'Invalid business.' end
@@ -98,7 +98,7 @@ QB.callback.register('qbjobcreator:server:editBusiness', function(src, businessI
     return true
 end, { rateLimit = { max = 10, window = 30000 } })
 
-QB.callback.register('qbjobcreator:server:deleteBusiness', function(src, businessId)
+Kora.callback.register('qbjobcreator:server:deleteBusiness', function(src, businessId)
     local business, err = authorise(src, businessId, true)
     if not business then return false, err end
 
@@ -112,7 +112,7 @@ QB.callback.register('qbjobcreator:server:deleteBusiness', function(src, busines
 end, { rateLimit = { max = 5, window = 30000 } })
 
 ---The creator edits a private copy so unrelated changes retain server-only fields.
-QB.callback.register('qbjobcreator:server:module', function(src, businessId, index)
+Kora.callback.register('qbjobcreator:server:module', function(src, businessId, index)
     local business, err = authorise(src, businessId, true)
     if not business then return nil, err end
     local module = State.module(business, index)
@@ -121,7 +121,7 @@ QB.callback.register('qbjobcreator:server:module', function(src, businessId, ind
 end, { rateLimit = { max = 10, window = 10000 } })
 
 ---Appends a module (`index` nil) or replaces one in place.
-QB.callback.register('qbjobcreator:server:saveModule', function(src, businessId, index, payload)
+Kora.callback.register('qbjobcreator:server:saveModule', function(src, businessId, index, payload)
     local business, err = authorise(src, businessId, true)
     if not business then return false, err end
 
@@ -149,7 +149,7 @@ QB.callback.register('qbjobcreator:server:saveModule', function(src, businessId,
     return true, position
 end, { rateLimit = { max = 20, window = 30000 } })
 
-QB.callback.register('qbjobcreator:server:removeModule', function(src, businessId, index)
+Kora.callback.register('qbjobcreator:server:removeModule', function(src, businessId, index)
     local business, err = authorise(src, businessId, true)
     if not business then return false, err end
 
@@ -166,13 +166,13 @@ QB.callback.register('qbjobcreator:server:removeModule', function(src, businessI
     return true
 end, { rateLimit = { max = 20, window = 30000 } })
 
-QB.callback.register('qbjobcreator:server:logs', function(src, businessId, limit)
+Kora.callback.register('qbjobcreator:server:logs', function(src, businessId, limit)
     local business, err = authorise(src, businessId, false)
     if not business then return nil, err end
     return Logs.recent(business.id, limit)
 end, { rateLimit = { max = 10, window = 10000 } })
 
-QB.callback.register('qbjobcreator:server:balance', function(src, businessId)
+Kora.callback.register('qbjobcreator:server:balance', function(src, businessId)
     local business, err = authorise(src, businessId, false)
     if not business then return nil, err end
     if GetResourceState('kora_bossmenu') ~= 'started' then return nil, 'No business account resource is running.' end

@@ -24,7 +24,7 @@ server.GetCurrentResourceName = function() return 'kora_jobcreator' end
 server.GetResourceState = function() return 'stopped' end
 server.GetPlayerPed = function(src) return src end
 server.json = codec
-server.QB = {
+server.Kora = {
     util = {}, compat = {}, blips = { getCategoryIds = function() return {} end },
     callback = { register = function(name, handler, options) callbacks[name] = { handler = handler, options = options } end },
     shared = { get = function(_, name) return { name = name, grades = { [1] = { isboss = true } } } end, all = function() return {} end },
@@ -93,8 +93,8 @@ client.RegisterCommand, client.Wait, client.AddEventHandler = noop, noop, noop
 client.RegisterNetEvent = function(name, handler) clientHandlers[name] = handler end
 client.TriggerServerEvent = noop
 client.CreateThread = function(callback) callback() end
-client.QB = {
-    blips = server.QB.blips, shared = server.QB.shared,
+client.Kora = {
+    blips = server.Kora.blips, shared = server.Kora.shared,
     callback = { trigger = function(name, ...) return assert(callbacks[name], 'missing callback ' .. name).handler(currentClient, ...) end },
     notify = { send = function(value) notifications[#notifications + 1] = value end },
     nui = { isAppOpen = function() return false end, registerApp = function(value) app = value end, openApp = noop,

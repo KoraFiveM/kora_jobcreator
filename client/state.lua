@@ -17,7 +17,7 @@ Client.debug = Config.debug == true
 ---@param message string
 ---@param kind? QBNotifyType
 function Client.notify(message, kind)
-    QB.notify.send({ title = Config.notifyTitle, message = message, type = kind or 'info' })
+    Kora.notify.send({ title = Config.notifyTitle, message = message, type = kind or 'info' })
 end
 
 ---@param coords table
@@ -51,7 +51,7 @@ end
 function Client.isBoss(business)
     local job = Client.job()
     if job.name ~= business.job then return false end
-    local definition = QB.shared.get('jobs', business.job)
+    local definition = Kora.shared.get('jobs', business.job)
     local grade = definition and definition.grades and definition.grades[job.grade and job.grade.level]
     return grade ~= nil and grade.isboss == true
 end
