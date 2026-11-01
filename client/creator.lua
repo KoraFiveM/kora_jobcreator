@@ -48,10 +48,6 @@ local function form(fields, title, description)
     return result.values
 end
 
--- ---------------------------------------------------------------------------
--- Anchors
--- ---------------------------------------------------------------------------
-
 ---Converts a `Kora.zones.startCreator` result into the flat fields the schema
 ---stores. The creator speaks in constructor options; the schema speaks in
 ---plain JSON, and this is the only place the two meet.
@@ -188,10 +184,6 @@ local function pickBlip()
     }
 end
 
--- ---------------------------------------------------------------------------
--- Per-type field collection
--- ---------------------------------------------------------------------------
-
 local fieldsFor = {}
 
 fieldsFor.Zone = function()
@@ -323,10 +315,6 @@ fieldsFor.UseableItem = function()
     return { item = values.item, useType = 'reward', consume = values.consume, rewards = rewards }
 end
 
--- ---------------------------------------------------------------------------
--- Module editing
--- ---------------------------------------------------------------------------
-
 ---@param business table
 ---@param index? integer nil to append a new module
 ---@param moduleType? string
@@ -401,10 +389,6 @@ local function editModuleData(business, index)
     Client.notify(saved and 'Module data saved. It is live now.' or (err or 'That data was rejected.'), saved and 'success' or 'error')
     return saved == true
 end
-
--- ---------------------------------------------------------------------------
--- Job creator management
--- ---------------------------------------------------------------------------
 
 local APP_ID = 'qbjobcreator:management'
 local openManagement

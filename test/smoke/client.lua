@@ -22,8 +22,6 @@ local creator = read('client/creator.lua')
 local payment = read('client/payment.lua')
 local state = read('client/state.lua')
 
--- --- yield safety ----------------------------------------------------------
-
 local enter = business:match('function Business%.enter%(business%).-\nend')
 H.ok(enter, 'Business.enter exists')
 H.ok(enter:find('business.inside = true', 1, true), 'the re-entry guard is set synchronously')
@@ -44,7 +42,6 @@ local jobUpdate = main:match("RegisterNetEvent%('QBCore:Client:OnJobUpdate'.-\ne
 H.ok(jobUpdate and jobUpdate:find('CreateThread', 1, true),
     'the job-update handler does not call the server on the event thread')
 
--- --- no ox_lib in a kora_lib resource -----------------------------------------
 --
 -- `cache` and `lib` are ox_lib globals. kora_lib has neither, and referencing one
 -- is a nil index at the worst possible moment rather than a load error.
@@ -54,8 +51,6 @@ for name, source in pairs({ business = business, main = main, creator = creator,
     H.nope(stripped:find('cache%.[%w_]+'), ('%s does not use the ox_lib cache global'):format(name))
     H.nope(stripped:find('[^%w_]lib%.[%w_]+'), ('%s does not use the ox_lib global'):format(name))
 end
-
--- --- teardown --------------------------------------------------------------
 
 H.ok(business:find('local function clearScope', 1, true), 'there is one teardown path')
 local clear = business:match('local function clearScope.-\nend')
@@ -75,8 +70,6 @@ H.ok(business:find("module.zoneType == 'poly'", 1, true)
 H.ok(clear:find('scope.targets', 1, true) < clear:find('for _, entity in ipairs(scope.entities)', 1, true),
     'targets are removed before the entities they point at')
 
--- --- the creator writes to the server, never to a file ---------------------
-
 H.nope(creator:find('SaveResourceFile', 1, true), 'the builder never writes a file')
 H.nope(creator:find('setClipboard', 1, true), 'the builder never hands back a snippet to paste')
 H.ok(creator:find("Kora.callback.trigger('qbjobcreator:server:saveModule'", 1, true),
@@ -84,8 +77,6 @@ H.ok(creator:find("Kora.callback.trigger('qbjobcreator:server:saveModule'", 1, t
 H.ok(creator:find('Kora.zones.startCreator', 1, true), 'zones are placed in-world')
 H.ok(creator:find('Kora.placement.start', 1, true), 'props are placed in-world')
 H.ok(creator:find('Kora.raycast.fromCamera', 1, true), 'an existing object is picked by looking at it')
-
--- --- AppShell management and editor resume ---------------------------------
 
 H.ok(creator:find("local APP_ID = 'qbjobcreator:management'", 1, true),
     'the management console has one namespaced AppShell id')

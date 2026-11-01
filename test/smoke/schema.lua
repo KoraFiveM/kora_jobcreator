@@ -28,15 +28,11 @@ local function refusesBusiness(message, payload)
     H.rejects(business, err, message)
 end
 
--- --- slugs -----------------------------------------------------------------
-
 H.equal(S.slug('Burger Shot'), 'burger_shot', 'a label becomes a slug')
 H.equal(S.slug('  Bean   Machine!! '), 'bean_machine', 'punctuation and padding are stripped')
 H.equal(S.slug('***'), nil, 'a slug with no word characters is refused')
 H.equal(S.slug(''), nil, 'an empty label has no slug')
 H.equal(S.slug(42), nil, 'a non-string has no slug')
-
--- --- coordinates -----------------------------------------------------------
 
 local coords = S.coords({ x = 1.5, y = -2.5, z = 3.0, w = 450.0 })
 H.equal(coords.x, 1.5, 'x survives')
@@ -44,8 +40,6 @@ H.equal(coords.w, 90.0, 'heading is normalised into 0-360')
 H.equal(S.coords({ 10, 20, 30 })[3] == nil and S.coords({ 10, 20, 30 }).z, 30.0, 'an array form is accepted')
 H.equal(S.coords({ x = 1, y = 2 }), nil, 'a coordinate missing z is refused')
 H.equal(S.coords('here'), nil, 'a string is not a coordinate')
-
--- --- anchors ---------------------------------------------------------------
 
 local sphere = S.normaliseModule({
     moduleType = 'Stash', id = 'test', label = 'Test',
@@ -94,8 +88,6 @@ refuses('a model-only module refuses a zone anchor', { moduleType = 'StaticEntit
 
 refuses('a zone-only module refuses an entity anchor', { moduleType = 'Zone',
     model = { model = 'prop_bin_08', modelType = 'object' }, coords = { x = 0, y = 0, z = 0 } })
-
--- --- per-type payloads -----------------------------------------------------
 
 refuses('an unknown module type is refused', { moduleType = 'Nonsense' })
 refuses('a till without an id is refused', { moduleType = 'POS', zoneType = 'sphere',
@@ -157,8 +149,6 @@ local nestedBlip = S.normaliseModule({
 H.equal(nestedBlip.blip.category, 'Business', 'nested blips retain their category')
 H.equal(nestedBlip.blip.name, 'Bean Machine', 'nested blips retain their storefront name')
 
--- --- business assembly -----------------------------------------------------
-
 local business, err = S.normaliseBusiness({
     label = 'Burger Shot', job = 'BurgerShot',
     modules = {
@@ -176,8 +166,6 @@ H.equal(business.rejected[1].index, 3, 'the rejection reports its original posit
 
 refusesBusiness('a business without a job is refused', { label = 'No Job' })
 refusesBusiness('a non-table is not a business', 'nope')
-
--- --- startup vs dynamic ----------------------------------------------------
 
 H.ok(S.hasPerimeter(business), 'a business with a Zone module has a perimeter')
 H.ok(S.isStartupModule(business, business.modules[1]), 'the perimeter itself is a startup module')

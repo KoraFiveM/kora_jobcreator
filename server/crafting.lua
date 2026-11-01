@@ -152,10 +152,6 @@ Kora.callback.register('qbjobcreator:server:craft', function(src, businessId, mo
     return Crafting.craft(src, recipe, business)
 end, { rateLimit = { max = 20, window = 10000 } })
 
--- ---------------------------------------------------------------------------
--- Useable items
--- ---------------------------------------------------------------------------
-
 ---@param business table
 ---@param module table
 ---@param binding? table
