@@ -144,7 +144,7 @@ Kora.callback.register('qbjobcreator:server:setDuty', function(src, businessId, 
     local business = State.get(businessId)
     if not business then return false, 'Unknown business.' end
     local dutyZone
-    for _, module in ipairs(business.modules or {}) do
+    for _, module in ipairs(business.modules) do
         if module.moduleType == 'Zone' and module.controlDuty ~= false and State.nearModule(src, module) then
             dutyZone = module
             break

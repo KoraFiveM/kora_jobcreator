@@ -22,7 +22,7 @@ function Crafting.recipe(id)
     return type(recipe) == 'table' and recipe or nil
 end
 
----@param list any
+---@param recipe table
 ---@param field 'ingredients'|'give'
 ---@return table[]
 local function entries(recipe, field)

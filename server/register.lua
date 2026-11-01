@@ -27,7 +27,6 @@ local handlers = {}
 
 local function addBoundary(record, module)
     local coords, distance = State.moduleBoundary(module)
-    record.coords = record.coords or {}
     for _, point in ipairs(coords) do
         local duplicate = false
         for _, existing in ipairs(record.coords) do

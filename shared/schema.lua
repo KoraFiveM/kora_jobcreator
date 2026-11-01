@@ -172,9 +172,7 @@ local function normaliseAnchor(mod, out, allowed)
         local coords = S.coords(mod.coords)
         if not coords then return false, 'this module needs coords' end
         out.zoneType, out.coords = zoneType, coords
-        local ok, err = validator(mod, out)
-        if not ok then return false, err end
-        return true
+        return validator(mod, out)
     end
 
     local model, modelErr = normaliseModel(mod.model)
@@ -329,11 +327,13 @@ payloads.UseableItem = function(mod, out)
     if type(mod.rewards) ~= 'table' then return false, 'a reward useable needs a rewards pool' end
     out.rewards = {}
     for _, raw in ipairs(mod.rewards) do
-        local name = type(raw) == 'table' and str(raw.item or raw.name, 64) or nil
-        local amount = type(raw) == 'table' and int(raw.amount or raw.count, 1, 1000) or nil
-        local chance = type(raw) == 'table' and num(raw.chance, 0.0001, 1000000) or nil
+        local name = type(raw) == 'table' and str(raw.item or raw.name, 64)
         if not name then return false, 'a reward entry needs an item' end
-        out.rewards[#out.rewards + 1] = { item = name:lower(), amount = amount or 1, chance = chance or 1.0 }
+        out.rewards[#out.rewards + 1] = {
+            item = name:lower(),
+            amount = int(raw.amount or raw.count, 1, 1000) or 1,
+            chance = num(raw.chance, 0.0001, 1000000) or 1.0,
+        }
     end
     if #out.rewards == 0 then return false, 'a reward useable needs at least one reward' end
     out.rolls = int(mod.rolls, 1, 20) or 1

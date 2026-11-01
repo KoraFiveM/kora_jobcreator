@@ -143,7 +143,6 @@ end
 
 local function addBoundary(record, module)
     local coords, distance = State.moduleBoundary(module)
-    record.coords = record.coords or {}
     for _, point in ipairs(coords) do
         local duplicate = false
         for _, existing in ipairs(record.coords) do
@@ -245,12 +244,6 @@ function Pos.context(shopId)
     return State.get(record.businessId), record.module
 end
 
----@param items table
----@param name string
----@param info table
----@param price integer
----@param slots integer
----@return integer|nil slot
 local function sameInfo(a, b)
     a, b = a or {}, b or {}
     for key, value in pairs(a) do if b[key] ~= value then return false end end
@@ -263,6 +256,13 @@ local function stockerFor(item)
     return type(businessData) == 'table' and businessData.stocker or nil
 end
 
+---@param items table
+---@param name string
+---@param info table
+---@param price integer
+---@param stocker string|nil
+---@param slots integer
+---@return integer|nil slot
 local function slotFor(items, name, info, price, stocker, slots)
     for slot = 1, slots do
         local existing = items[slot]
@@ -564,7 +564,7 @@ Kora.callback.register('qbjobcreator:server:panic', function(src, businessId, sh
 
     local playerCoords = GetEntityCoords(GetPlayerPed(src))
     local anchor, bestDistance
-    for _, point in ipairs(record.coords or {}) do
+    for _, point in ipairs(record.coords) do
         local x, y, z = playerCoords.x - point.x, playerCoords.y - point.y, playerCoords.z - point.z
         local distance = x * x + y * y + z * z
         if not bestDistance or distance < bestDistance then anchor, bestDistance = point, distance end

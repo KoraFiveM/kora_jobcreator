@@ -17,8 +17,6 @@ State.ready = false
 ---@type table<string, table> id -> normalised business
 State.businesses = {}
 
-local RESOURCE = GetCurrentResourceName()
-
 ---FNV-1a fingerprints definitions for clients and matches the checksum used
 ---for this resource's migration files.
 ---@param value string

@@ -49,9 +49,7 @@ local function apply(definitions)
     Creator.refresh()
 end
 
-RegisterNetEvent('qbjobcreator:client:sync', function(definitions)
-    apply(definitions)
-end)
+RegisterNetEvent('qbjobcreator:client:sync', apply)
 
 RegisterNetEvent('qbjobcreator:client:staff', function(counts)
     Client.staff = type(counts) == 'table' and counts or {}
