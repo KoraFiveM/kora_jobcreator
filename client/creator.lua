@@ -216,15 +216,13 @@ fieldsFor.StaticEntity = function() return {} end
 fieldsFor.BossMenu = function() return {} end
 
 fieldsFor.Stash = function(business)
-    local values = form({
+    return form({
         { id = 'label', label = 'Label', type = 'text', required = true, default = 'Stash' },
         { id = 'id', label = 'Stash id', type = 'text', required = true, default = business.id .. '_stash' },
         { id = 'slots', label = 'Slots', type = 'number', default = Config.stash.slots, min = 1, max = 500 },
         { id = 'weight', label = 'Max weight (grams)', type = 'number', default = Config.stash.weight, min = 1000 },
         { id = 'public', label = 'Anyone may open it', type = 'checkbox' },
     }, 'Stash')
-    if not values then return nil end
-    return values
 end
 
 fieldsFor.POS = function(business)
@@ -339,11 +337,11 @@ local function editModule(business, index, moduleType)
         local anchor = pickAnchor(descriptor.interaction)
         if not anchor then return end
         for key, value in pairs(anchor) do payload[key] = value end
-    end
 
-    if descriptor.interaction ~= 'none' and moduleType ~= 'Zone' then
-        local blip = pickBlip()
-        if blip then payload.blip = blip end
+        if moduleType ~= 'Zone' then
+            local blip = pickBlip()
+            if blip then payload.blip = blip end
+        end
     end
 
     local ok, result = Kora.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
