@@ -24,8 +24,6 @@ local register = read('server/register.lua')
 local schema = read('shared/schema.lua')
 local manifest = read('fxmanifest.lua')
 
--- --- authorisation ---------------------------------------------------------
-
 H.ok(admin:find('State.isAdmin(src)', 1, true), 'the creator checks an admin permission')
 H.ok(state:find('hasPermission', 1, true), 'admin status comes from qbcore, not from the client')
 for _, callback in ipairs({ 'createBusiness', 'editBusiness', 'deleteBusiness', 'saveModule', 'removeModule' }) do
@@ -52,7 +50,6 @@ H.ok(staff:find("AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)",
     'character unload prunes the explicit source rather than ambient event source')
 H.ok(staff:find('if prune() then publish() end', 1, true), 'stale presence is periodically revalidated')
 
--- --- rate limiting ---------------------------------------------------------
 --
 -- Every client-callable entry point runs a database read, a dialog or a money
 -- move. An unlimited one is a free denial-of-service against the server.
@@ -72,8 +69,6 @@ for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
     H.equal(limited, registrations, 'every server callback carries a rate limit')
 end
 
--- --- the client never supplies gameplay data -------------------------------
-
 H.ok(crafting:find('Config.recipes[id]', 1, true), 'a recipe is resolved from shared config')
 H.ok(crafting:find("if id == recipeId then offered = true", 1, true),
     'a recipe must be offered by the bench being used, not merely exist')
@@ -82,8 +77,6 @@ H.nope(crafting:find('function(src, recipe)\n', 1, true), 'no callback accepts a
 
 H.ok(pos:find('Pos.accepts(shopId', 1, true), 'the till decides what it stocks')
 H.ok(pos:find('Config.pos.maxPrice', 1, true), 'prices are capped')
-
--- --- money -----------------------------------------------------------------
 
 H.ok(payment:find('nearEachOther(src, target)', 1, true), 'a card payment is distance-checked')
 H.equal(select(2, payment:gsub('if not nearEachOther', '')), 2,
@@ -107,8 +100,6 @@ H.ok(crafting:find('for _, undo in ipairs(removed) do', 1, true),
 H.ok(crafting:find('exports.kora_inventory:CanCraftItems(src, needed, produced)', 1, true),
     'combined output capacity is checked before ingredient removal')
 
--- --- validation ------------------------------------------------------------
-
 H.ok(state:find('S.normaliseBusiness(raw)', 1, true), 'every write is validated by the schema')
 H.ok(state:find('State.businesses[stamp(business).id] = business', 1, true),
     'the mirror is updated after the write, and stamped with a fingerprint')
@@ -120,7 +111,6 @@ H.ok(persist and persist:find('writeErr then return nil', 1, true),
 H.ok(register:find('State.moduleBoundary(module)', 1, true), 'business stashes register their server coordinate boundary')
 H.ok(pos:find('coords = record.coords', 1, true), 'POS shops register every fixture coordinate')
 
--- --- seed jobs -------------------------------------------------------------
 --
 -- kora_core's shared registries are in-memory and rebuilt from its own seed files
 -- on every start. Registering a seed's job inside the first-boot business
@@ -132,7 +122,6 @@ local businessLoop = load_ and load_:find('not State.businesses[id]', 1, true)
 H.ok(jobLoop and businessLoop, 'State.load both registers seed jobs and inserts seed businesses')
 H.ok(jobLoop < businessLoop, 'seed jobs are registered outside (and before) the first-boot insert')
 
--- --- luac safety -----------------------------------------------------------
 --
 -- A BARE backtick outside a string is CFX's GetHashKey sugar and breaks stock
 -- lua/luac, which is what these tests run under. Backticks inside quoted SQL
@@ -146,8 +135,6 @@ for name, source in pairs({ state = state, admin = admin, pos = pos, crafting = 
     payment = payment, staff = staff, schema = schema, register = register }) do
     H.nope(bareBacktick(source), ('%s has no bare backtick literal'):format(name))
 end
-
--- --- load order ------------------------------------------------------------
 
 local order = {}
 for file in manifest:gmatch("'(server/[%w_]+%.lua)'") do order[#order + 1] = file end

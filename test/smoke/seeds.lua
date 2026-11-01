@@ -30,8 +30,6 @@ H.ok(loadAll('shared/recipes') > 0, 'at least one recipe file ships')
 H.ok(loadAll('shared/shopitems') > 0, 'at least one shop-item file ships')
 H.ok(loadAll('shared/businesses') > 0, 'at least one seed file ships')
 
--- --- recipes ---------------------------------------------------------------
-
 local recipeCount = 0
 for id, recipe in pairs(Config.recipes) do
     recipeCount = recipeCount + 1
@@ -52,8 +50,6 @@ for id, recipe in pairs(Config.recipes) do
 end
 H.ok(recipeCount > 0, 'recipes were registered')
 
--- --- shop item lists -------------------------------------------------------
-
 for name, list in pairs(Config.shopItems) do
     H.ok(#list > 0, ('shop list %s is not empty'):format(name))
     for _, entry in ipairs(list) do
@@ -63,8 +59,6 @@ for name, list in pairs(Config.shopItems) do
         end
     end
 end
-
--- --- seeds -----------------------------------------------------------------
 
 H.ok(#Config.seeds > 0, 'seeds were registered')
 

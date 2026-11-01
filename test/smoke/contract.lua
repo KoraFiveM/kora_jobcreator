@@ -20,8 +20,6 @@ local server, client = '', ''
 for _, file in ipairs(serverFiles) do server = server .. read(file) end
 for _, file in ipairs(clientFiles) do client = client .. read(file) end
 
--- --- manifest --------------------------------------------------------------
-
 for _, dependency in ipairs({ 'kora_lib', 'kora_sql', 'kora_core', 'kora_inventory', 'kora_target' }) do
     H.ok(manifest:find(("dependency '%s'"):format(dependency), 1, true), 'depends on ' .. dependency)
 end
@@ -51,8 +49,6 @@ for _, path in ipairs({ 'shared/schema.lua', 'shared/recipes/%*%.lua', 'shared/b
     H.ok(at and at > configAt, ('%s loads after config'):format(path))
 end
 
--- --- callbacks agree across the boundary -----------------------------------
-
 local registered, triggered = {}, {}
 for name in server:gmatch("Kora%.callback%.register%('(qbjobcreator:server:[%w:]+)'") do registered[name] = true end
 for name in client:gmatch("Kora%.callback%.trigger%('(qbjobcreator:server:[%w:]+)'") do triggered[name] = true end
@@ -72,13 +68,9 @@ for name in pairs(serverTriggered) do
 end
 H.equal(next(serverTriggered) ~= nil, true, 'the server does ask the client things')
 
--- --- net events agree ------------------------------------------------------
-
 for event in server:gmatch("TriggerClientEvent%('(qbjobcreator:client:[%w:]+)'") do
     H.ok(client:find(("RegisterNetEvent('%s'"):format(event), 1, true), ('the client handles %s'):format(event))
 end
-
--- --- exports ---------------------------------------------------------------
 
 for _, name in ipairs({ 'getBusinesses', 'getBusiness', 'getBusinessesByJob', 'getStaffCounts', 'recordBusinessLog' }) do
     H.ok(server:find(("exports('%s'"):format(name), 1, true), ('server export %s'):format(name))
@@ -106,7 +98,6 @@ H.ok(client:find('---@type QBBossMenuClientExports', 1, true), 'client boss-menu
 H.ok(server:find('---@type QBBossMenuLedgerExports', 1, true), 'ledger proxy has a LuaLS contract')
 H.ok(server:find('---@type QBBossMenuBalanceExports', 1, true), 'balance proxy has a LuaLS contract')
 
--- --- integration seams -----------------------------------------------------
 --
 -- Every optional dependency must be probed before use: this resource has to
 -- start on a server that runs neither a boss menu nor a dispatch system.
@@ -127,7 +118,6 @@ for _, name in ipairs(tables) do
     H.nope(name:find('stock', 1, true), ('%s is not a second record of the shelf'):format(name))
 end
 
--- --- kora_core call shapes ----------------------------------------------------
 --
 -- Two of kora_core's reads take shapes that fail SILENTLY when you get them wrong:
 -- `getPlayerData`'s path is an array of keys (a bare string walks a string and
@@ -142,8 +132,6 @@ end
 -- The leading space matters: 'ipairs(' contains 'pairs(' as a substring.
 H.nope(server:find(' pairs(Kora.shared.all', 1, true), 'Kora.shared.all is never iterated with pairs')
 H.ok(server:find('ipairs(Kora.shared.all', 1, true), 'the job list reads the dense array')
-
--- --- teardown --------------------------------------------------------------
 
 H.ok(client:find('onClientResourceStop', 1, true), 'the client cleans up when the resource stops')
 H.ok(client:find('Business.destroy(business)', 1, true), 'every live business is destroyed on stop')

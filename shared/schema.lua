@@ -80,10 +80,6 @@ function S.coords(value)
     return { x = x, y = y, z = z, w = w % 360.0 }
 end
 
--- ---------------------------------------------------------------------------
--- Module types
--- ---------------------------------------------------------------------------
-
 ---`interaction` says what kinds of world anchor a module accepts:
 ---  `none`  -- it has no in-world interaction at all
 ---  `zone`  -- a trigger volume only (never a target option)
@@ -108,10 +104,6 @@ S.moduleTypes = {
 
 S.moduleType = {}
 for _, entry in ipairs(S.moduleTypes) do S.moduleType[entry.type] = entry end
-
--- ---------------------------------------------------------------------------
--- Interaction anchors
--- ---------------------------------------------------------------------------
 
 local zoneValidators = {
     sphere = function(mod, out)
@@ -232,10 +224,6 @@ local function normaliseBlip(raw)
     }
 end
 
--- ---------------------------------------------------------------------------
--- Per-type payloads
--- ---------------------------------------------------------------------------
-
 ---@type table<string, fun(mod: table, out: table): boolean, string|nil>
 local payloads = {}
 
@@ -351,10 +339,6 @@ payloads.UseableItem = function(mod, out)
     out.rolls = int(mod.rolls, 1, 20) or 1
     return true
 end
-
--- ---------------------------------------------------------------------------
--- Public entry points
--- ---------------------------------------------------------------------------
 
 ---@param raw any
 ---@return table|nil module, string|nil err

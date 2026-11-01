@@ -43,10 +43,6 @@ local function shopIdFromStockKey(key)
     return id and shops[id] and id or nil
 end
 
--- ---------------------------------------------------------------------------
--- Pricing
--- ---------------------------------------------------------------------------
-
 ---Items whose price is fixed by a `Config.shopItems` list this till references.
 ---@param module table
 ---@return table<string, integer> fixed, boolean restricted
@@ -115,10 +111,6 @@ local function loadPrices()
 end
 Pos.loadPrices = loadPrices
 
--- ---------------------------------------------------------------------------
--- Society payouts
--- ---------------------------------------------------------------------------
-
 local function bossMenuReady()
     return GetResourceState('kora_bossmenu') == 'started'
 end
@@ -148,10 +140,6 @@ function Pos.debit(job, amount, reason)
     local bossMenu = exports.kora_bossmenu
     return bossMenu:removeBusinessMoney(job, amount, reason)
 end
-
--- ---------------------------------------------------------------------------
--- Registration
--- ---------------------------------------------------------------------------
 
 local function addBoundary(record, module)
     local coords, distance = State.moduleBoundary(module)
@@ -256,10 +244,6 @@ function Pos.context(shopId)
     if not record then return nil end
     return State.get(record.businessId), record.module
 end
-
--- ---------------------------------------------------------------------------
--- Stock intake
--- ---------------------------------------------------------------------------
 
 ---@param items table
 ---@param name string
@@ -438,10 +422,6 @@ exports.kora_inventory:RegisterHook('swapItems', function(payload)
     return false
 end, { typeFilter = { stash = true } })
 
--- ---------------------------------------------------------------------------
--- Sales
--- ---------------------------------------------------------------------------
-
 ---Sales are credited from kora_inventory's own post-commit audit event, not from a
 ---`buyItem` hook: a hook fires BEFORE the purchase is locked and committed, so
 ---crediting there would pay the business for a sale that could still fail on
@@ -498,10 +478,6 @@ AddEventHandler('qbinventory:server:audit', function(action, src, details)
         },
     })
 end)
-
--- ---------------------------------------------------------------------------
--- Player-facing actions
--- ---------------------------------------------------------------------------
 
 local function tillContext(src, shopId, requireBoss)
     local record = shops[shopId]

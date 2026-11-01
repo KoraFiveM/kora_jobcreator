@@ -40,10 +40,6 @@ Kora.callback.register('qbjobcreator:client:approveBill', function(request)
     return result ~= nil and result.confirmed == true
 end)
 
--- ---------------------------------------------------------------------------
--- Taking a payment
--- ---------------------------------------------------------------------------
-
 ---@param target? integer Server id; asked for when not supplied.
 function QbJobCreator.takePayment(target)
     if not target then
@@ -77,10 +73,6 @@ CreateThread(function()
         end,
     } }, Config.payment.distance)
 end)
-
--- ---------------------------------------------------------------------------
--- Price editor
--- ---------------------------------------------------------------------------
 
 ---@param shopId string
 function QbJobCreator.openPriceEditor(shopId)

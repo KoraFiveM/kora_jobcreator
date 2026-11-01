@@ -181,10 +181,6 @@ Kora.callback.register('qbjobcreator:server:balance', function(src, businessId)
     return bossMenu:getBusinessBalance(business.job)
 end, { rateLimit = { max = 10, window = 10000 } })
 
--- ---------------------------------------------------------------------------
--- Exports for other resources
--- ---------------------------------------------------------------------------
-
 exports('getBusinesses', function() return State.snapshot(true) end)
 exports('getBusiness', function(id) local business = State.get(id); return business and json.decode(json.encode(business)) or nil end)
 

@@ -67,10 +67,6 @@ local function itemLabel(name)
     return (definition and definition.label) or name
 end
 
--- ---------------------------------------------------------------------------
--- Construction
--- ---------------------------------------------------------------------------
-
 ---@param definition table
 ---@return table
 function Business.create(definition)
@@ -163,10 +159,6 @@ function Business.setDuty(business, onDuty)
 
     Kora.callback.trigger('qbjobcreator:server:setDuty', business.id, onDuty)
 end
-
--- ---------------------------------------------------------------------------
--- Anchors
--- ---------------------------------------------------------------------------
 
 ---@param scope table
 ---@param module table
@@ -284,10 +276,6 @@ local function addBlip(scope, blip)
     })
     if handle then scope.blips[#scope.blips + 1] = handle end
 end
-
--- ---------------------------------------------------------------------------
--- Module builders
--- ---------------------------------------------------------------------------
 
 local builders = {}
 
