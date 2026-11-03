@@ -27,7 +27,7 @@ H.ok(manifest:find("'@kora_lib/init.lua'", 1, true), 'loads the kora_lib mirror'
 H.ok(manifest:find("'@kora_core/init.lua'", 1, true), 'loads the qbcore mirror')
 H.ok(manifest:find("'shared/schema.lua'", 1, true), 'the schema is shared by both realms')
 H.ok(manifest:find("'config.lua',", 1, true), 'config loads before the shared files that append to it')
-H.ok(manifest:find('sql/001_businesses.sql', 1, true), 'the migration is a packaged file')
+H.ok(manifest:find("'server/tables.lua'", 1, true) and not manifest:find('sql/00', 1, true), 'the table schema is a loaded script, not a packaged sql file')
 H.ok(client:find('Kora.blips.getCategoryIds()', 1, true),
     'the creator category select comes from kora_lib instead of free text')
 H.ok(client:find("type = 'select'", 1, true) and client:find("default = 'Business'", 1, true),
@@ -112,8 +112,8 @@ end
 H.ok(server:find('GetShopItems', 1, true) and server:find('SetShopItems', 1, true),
     'shop stock is read and written through qbinventory')
 local tables = {}
-for name in read('sql/001_businesses.sql'):gmatch('CREATE TABLE IF NOT EXISTS `([%w_]+)`') do tables[#tables + 1] = name end
-H.equal(#tables, 3, 'the migration creates exactly the three tables this resource owns')
+for name in read('server/tables.lua'):gmatch("name = '(qbjobcreator[%w_]*)',\n        collate") do tables[#tables + 1] = name end
+H.equal(#tables, 4, 'the schema declares exactly the four tables this resource owns')
 for _, name in ipairs(tables) do
     H.nope(name:find('stock', 1, true), ('%s is not a second record of the shelf'):format(name))
 end

@@ -68,17 +68,17 @@ local function driverQuery(_, sql, ...)
     end
     callback(result)
 end
-local function driverMigrate(_, resource, migrations, callback)
+local function driverEnsureTables(_, specs, resource, callback)
     startupOrder[#startupOrder + 1] = 'migrate'
-    eq(resource, 'kora_jobcreator', 'actual main preserves migration resource name')
-    eq(#migrations, 2, 'actual main registers both schema migrations')
-    eq(migrations[1].version, 1, 'original migration version preserved')
-    eq(migrations[1].checksum, Kora.util.fnv1a(migrations[1].sql), 'actual migrateFiles computes original migration checksum')
-    eq(migrations[2].version, 2, 'new marker migration has additive version')
-    eq(migrations[2].sql:find('CREATE TABLE IF NOT EXISTS `qbjobcreator_deleted`', 1, true) ~= nil, true,
-        'new table migration uses existing retry-safe runner shape')
-    eq(migrations[2].checksum, Kora.util.fnv1a(migrations[2].sql), 'actual migrateFiles fingerprints added file')
-    callback({ ran = 2, total = 2 })
+    eq(resource, 'kora_jobcreator', 'actual main passes the owning resource name')
+    eq(specs, QBJobCreatorTables, 'actual main ensures the declared schema')
+    local names = {}
+    for _, spec in ipairs(specs) do names[spec.name] = true end
+    for _, name in ipairs({ 'qbjobcreator', 'qbjobcreator_prices', 'qbjobcreator_logs', 'qbjobcreator_deleted' }) do
+        eq(names[name], true, 'schema declares ' .. name)
+    end
+    eq(#specs, 4, 'schema declares exactly the four tables')
+    callback({})
 end
 local function driverTransaction(_, queries, ...)
     local args = { ... }; local callback = args[#args]
@@ -103,7 +103,7 @@ local function driverTransaction(_, queries, ...)
 end
 exports = setmetatable({
     kora_sql = { query = driverQuery, execute = driverExecute, transaction = driverTransaction,
-        isReady = function() return true end, migrate = driverMigrate },
+        isReady = function() return true end, ensureTables = driverEnsureTables },
     kora_core = {
         hasPermission = function(_, src, permission) return src == 1 and permission == 'admin' end,
         registerShared = function(_, registry, name, value)
@@ -131,16 +131,13 @@ Citizen = { Await = function(p)
 end }
 dofile('../kora_sql/init.lua')
 GetCurrentResourceName = function() return 'kora_jobcreator' end
-LoadResourceFile = function(resource, path)
-    eq(resource, 'kora_jobcreator', 'actual migrateFiles reads from owning resource')
-    return read(root .. path)
-end
 RegisterNetEvent = function() end
 TriggerClientEvent = function(name, target, snapshot)
     eq(name, 'qbjobcreator:client:sync', 'existing sync event unchanged')
     published[#published + 1] = { target = target, snapshot = clone(snapshot) }
 end
 dofile(root .. 'config.lua')
+dofile(root .. 'server/tables.lua')
 dofile(root .. 'shared/schema.lua')
 dofile(root .. 'shared/businesses/burgershot.lua')
 local function boot()
@@ -162,10 +159,10 @@ local function boot()
     eq(#threads, 2, 'actual main queues startup and log trimming separately')
     eq(State.ready, false, 'actual main leaves readiness false before startup')
     threads[1]() -- Leave the unrelated periodic log loop inert.
-    eq(State.ready, true, 'actual main marks ready after successful migration and load')
-    eq(startupOrder[1], 'migrate', 'schema migration occurs before persisted data reads')
+    eq(State.ready, true, 'actual main marks ready after successful schema ensure and load')
+    eq(startupOrder[1], 'migrate', 'schema ensure occurs before persisted data reads')
     eq(startupOrder[2], 'prices', 'existing price load order preserved')
-    eq(startupOrder[3], 'business_query', 'actual state loads after migration completion')
+    eq(startupOrder[3], 'business_query', 'actual state loads after schema completion')
     return State
 end
 local State = boot()

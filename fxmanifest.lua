@@ -39,6 +39,7 @@ server_scripts {
     'server/payment.lua',
     'server/register.lua',
     'server/admin.lua',
+    'server/tables.lua',
     'server/main.lua',
 }
 
@@ -48,9 +49,4 @@ client_scripts {
     'client/payment.lua',
     'client/creator.lua',
     'client/main.lua',
-}
-
-files {
-    'sql/001_businesses.sql',
-    'sql/002_deleted.sql',
 }

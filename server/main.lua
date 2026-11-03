@@ -6,18 +6,19 @@ local State = QbJobCreator.state
 local Pos = QbJobCreator.pos
 local Logs = QbJobCreator.logs
 
-local RESOURCE = GetCurrentResourceName()
-
 CreateThread(function()
     if not Kora.sql.ready(60000) then
         return print('^1[qbjobcreator]^7 qbsql was not ready; resource disabled.')
     end
 
-    local _, err = Kora.sql.migrateFiles(RESOURCE, {
-        { version = 1, name = 'businesses', file = 'sql/001_businesses.sql' },
-        { version = 2, name = 'deleted', file = 'sql/002_deleted.sql' },
-    })
-    if err then return print(('^1[qbjobcreator]^7 migration failed: %s'):format(err)) end
+    local reports, err = Kora.sql.ensureTables(QBJobCreatorTables)
+    if err then return print(('^1[qbjobcreator]^7 schema failed: %s'):format(err)) end
+
+    for _, report in ipairs(reports or {}) do
+        for _, warning in ipairs(report.warnings or {}) do
+            print(('^3[qbjobcreator]^7 schema %s: %s'):format(report.table, warning))
+        end
+    end
 
     Pos.loadPrices()
 
