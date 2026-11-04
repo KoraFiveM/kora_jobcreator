@@ -32,7 +32,7 @@ server.Kora = {
         execute = function(_, params) persisted[params[1]] = codec.decode(params[4]); return true end,
         transaction = function(queries)
             for _, query in ipairs(queries) do
-                if query.sql:find('DELETE FROM `qbjobcreator`', 1, true) then persisted[query.params[1]] = nil end
+                if query.sql:find('DELETE FROM `kora_jobcreator`', 1, true) then persisted[query.params[1]] = nil end
             end
             return true
         end,

@@ -150,7 +150,7 @@ optional skill adapter. Business *definitions* are not configured there.
   with a `price` is fixed at that price; one without is employee-priced.
 * `shared/businesses/*.lua` — first-boot seeds. Inserted only when no business
   with that id exists and it has not been deleted in-game. Deletion markers in
-  `qbjobcreator_deleted` prevent reseeding; admins can still explicitly recreate
+  `kora_jobcreator_deleted` prevent reseeding; admins can still explicitly recreate
   the same id. In-game edits and deletions always win. A seed may
   also carry a `jobDefinition`, registered at boot when no job of that name
   exists yet — kora_core's job registry is in-memory, so this is re-checked every
@@ -166,7 +166,7 @@ kora_core metadata. Point them at your own skill resource if you have one.
 
 `Config.webhooks.default` receives every business event; a `[jobname]` key
 receives that job's as well, and a POS module may name a third URL of its own.
-All of it also lands in `qbjobcreator_logs` and in kora_lib's own event log
+All of it also lands in `kora_jobcreator_logs` and in kora_lib's own event log
 regardless of whether any webhook is configured.
 
 Webhook URLs are omitted from client definitions and copied public module data.
@@ -197,9 +197,9 @@ exports.kora_jobcreator:openBusinessMenu()
 | Table | Holds |
 |---|---|
 | `kora_jobcreator` | One row per business: label, job, and its modules as JSON. |
-| `qbjobcreator_deleted` | Deleted business IDs, retained to prevent automatic reseeding. |
-| `qbjobcreator_prices` | Employee-set prices, remembered per till and item. |
-| `qbjobcreator_logs` | Sales, restocks, payments, crafts and admin edits. |
+| `kora_jobcreator_deleted` | Deleted business IDs, retained to prevent automatic reseeding. |
+| `kora_jobcreator_prices` | Employee-set prices, remembered per till and item. |
+| `kora_jobcreator_logs` | Sales, restocks, payments, crafts and admin edits. |
 
 Shop stock and stash contents live in kora_inventory's own tables.
 

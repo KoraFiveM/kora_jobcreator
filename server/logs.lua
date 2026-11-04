@@ -62,7 +62,7 @@ function Logs.record(business, entry)
     -- insertAsync, not enqueue: kora_sql's write queue coalesces by primary key,
     -- and an append-only AUTO_INCREMENT log has no key to coalesce on -- every
     -- row would merge into one. This still never yields the caller.
-    Kora.sql.insertAsync([[INSERT INTO `qbjobcreator_logs` (`business`,`category`,`message`,`citizenid`,`amount`)
+    Kora.sql.insertAsync([[INSERT INTO `kora_jobcreator_logs` (`business`,`category`,`message`,`citizenid`,`amount`)
         VALUES (?,?,?,?,?)]], {
         business.id, entry.category, message, citizenid,
         entry.amount and math.floor(entry.amount) or nil,
@@ -100,10 +100,10 @@ function Logs.trim(businessId)
     -- `retain` rows the subquery is empty, COALESCE yields 0, and nothing is
     -- deleted. The derived table is required: MySQL cannot read the same table
     -- it is deleting from in a bare subquery.
-    Kora.sql.executeAsync([[DELETE FROM `qbjobcreator_logs`
+    Kora.sql.executeAsync([[DELETE FROM `kora_jobcreator_logs`
         WHERE `business` = ? AND `id` <= COALESCE((
             SELECT `cutoff` FROM (
-                SELECT `id` AS `cutoff` FROM `qbjobcreator_logs`
+                SELECT `id` AS `cutoff` FROM `kora_jobcreator_logs`
                 WHERE `business` = ? ORDER BY `id` DESC LIMIT 1 OFFSET ?
             ) AS `bound`
         ), 0)]], { businessId, businessId, math.floor(Config.logs.retain) }, function() end)
@@ -114,7 +114,7 @@ end
 ---@return table[]
 function Logs.recent(businessId, limit)
     local rows = Kora.sql.query([[SELECT `category`, `message`, `amount`, `created_at`
-        FROM `qbjobcreator_logs` WHERE `business` = ? ORDER BY `id` DESC LIMIT ?]], {
+        FROM `kora_jobcreator_logs` WHERE `business` = ? ORDER BY `id` DESC LIMIT ?]], {
         businessId, math.min(math.max(math.floor(tonumber(limit) or 25), 1), 100),
     })
     return rows or {}

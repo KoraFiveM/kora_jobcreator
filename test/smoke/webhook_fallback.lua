@@ -38,7 +38,7 @@ Kora.discord.sendWebhook = function(url, payload, callback)
     return result
 end
 Kora.sql = { insertAsync = function(sql, params, callback)
-    eq(sql:find('INSERT INTO `qbjobcreator_logs`', 1, true) ~= nil, true, 'existing append-only log table remains')
+    eq(sql:find('INSERT INTO `kora_jobcreator_logs`', 1, true) ~= nil, true, 'existing append-only log table remains')
     sqlRecords[#sqlRecords + 1] = { sql = sql, params = clone(params) }
     callback(1)
 end }

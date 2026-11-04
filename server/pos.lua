@@ -97,12 +97,12 @@ end
 local function rememberPrice(shopId, itemName, price)
     remembered[shopId] = remembered[shopId] or {}
     remembered[shopId][itemName] = price
-    Kora.sql.executeAsync([[INSERT INTO `qbjobcreator_prices` (`shop`,`item`,`price`) VALUES (?,?,?)
+    Kora.sql.executeAsync([[INSERT INTO `kora_jobcreator_prices` (`shop`,`item`,`price`) VALUES (?,?,?)
         ON DUPLICATE KEY UPDATE `price` = VALUES(`price`)]], { shopId, itemName, price }, function() end)
 end
 
 local function loadPrices()
-    local rows = Kora.sql.query('SELECT `shop`, `item`, `price` FROM `qbjobcreator_prices`')
+    local rows = Kora.sql.query('SELECT `shop`, `item`, `price` FROM `kora_jobcreator_prices`')
     remembered = {}
     for _, row in ipairs(rows or {}) do
         remembered[row.shop] = remembered[row.shop] or {}

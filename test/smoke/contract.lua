@@ -112,7 +112,7 @@ end
 H.ok(server:find('GetShopItems', 1, true) and server:find('SetShopItems', 1, true),
     'shop stock is read and written through qbinventory')
 local tables = {}
-for name in read('server/tables.lua'):gmatch("name = '(qbjobcreator[%w_]*)',\n        collate") do tables[#tables + 1] = name end
+for name in read('server/tables.lua'):gmatch("name = '(kora_jobcreator[%w_]*)',\n        collate") do tables[#tables + 1] = name end
 H.equal(#tables, 4, 'the schema declares exactly the four tables this resource owns')
 for _, name in ipairs(tables) do
     H.nope(name:find('stock', 1, true), ('%s is not a second record of the shelf'):format(name))

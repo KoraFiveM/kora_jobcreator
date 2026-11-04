@@ -44,11 +44,11 @@ local failNext, queryFail, markerFail, transactionFail = false, false, false, ni
 local function driverExecute(_, sql, params, callback)
     statements[#statements + 1] = { kind = 'execute', sql = sql, params = clone(params) }
     if failNext then failNext = false; callback(nil, 'fixture write failure'); return end
-    if sql:find('INSERT INTO `qbjobcreator`', 1, true) then
+    if sql:find('INSERT INTO `kora_jobcreator`', 1, true) then
         local id = params[1]
         rows[id] = { id = id, label = params[2], job = params[3], modules = params[4] }
         callback({ affectedRows = 1 })
-    elseif sql:find('DELETE FROM `qbjobcreator`', 1, true) then
+    elseif sql:find('DELETE FROM `kora_jobcreator`', 1, true) then
         rows[params[1]] = nil; callback({ affectedRows = 1 })
     else error('unhandled inert SQL: ' .. sql) end
 end
@@ -57,13 +57,13 @@ local function driverQuery(_, sql, ...)
     statements[#statements + 1] = { kind = 'query', sql = sql }
     if queryFail then queryFail = false; callback(nil, 'fixture query failure'); return end
     local result = {}
-    if sql:find('FROM `qbjobcreator_deleted`', 1, true) then
+    if sql:find('FROM `kora_jobcreator_deleted`', 1, true) then
         startupOrder[#startupOrder + 1] = 'marker_query'
         if markerFail then markerFail = false; callback(nil, 'fixture marker query failure'); return end
         for id in pairs(tombstones) do result[#result + 1] = { id = id } end
     else
         startupOrder[#startupOrder + 1] = 'business_query'
-        eq(sql:find('FROM `qbjobcreator`', 1, true) ~= nil, true, 'query stays within business persistence')
+        eq(sql:find('FROM `kora_jobcreator`', 1, true) ~= nil, true, 'query stays within business persistence')
         for _, row in pairs(rows) do result[#result + 1] = clone(row) end
     end
     callback(result)
@@ -74,7 +74,7 @@ local function driverEnsureTables(_, specs, resource, callback)
     eq(specs, QBJobCreatorTables, 'actual main ensures the declared schema')
     local names = {}
     for _, spec in ipairs(specs) do names[spec.name] = true end
-    for _, name in ipairs({ 'qbjobcreator', 'qbjobcreator_prices', 'qbjobcreator_logs', 'qbjobcreator_deleted' }) do
+    for _, name in ipairs({ 'kora_jobcreator', 'kora_jobcreator_prices', 'kora_jobcreator_logs', 'kora_jobcreator_deleted' }) do
         eq(names[name], true, 'schema declares ' .. name)
     end
     eq(#specs, 4, 'schema declares exactly the four tables')
@@ -91,9 +91,9 @@ local function driverTransaction(_, queries, ...)
         if failure == index then callback(false); return end
         local sql, params = statement.sql, statement.params
         local id = params[1]
-        if sql:find('DELETE FROM `qbjobcreator`', 1, true) then
+        if sql:find('DELETE FROM `kora_jobcreator`', 1, true) then
             draftRows[id] = nil
-        elseif sql:find('INSERT IGNORE INTO `qbjobcreator_deleted`', 1, true) then
+        elseif sql:find('INSERT IGNORE INTO `kora_jobcreator_deleted`', 1, true) then
             draftTombstones[id] = true
         else error('unexpected transaction SQL: ' .. sql) end
     end

@@ -215,7 +215,7 @@ function State.persist(raw)
     local business, err = S.normaliseBusiness(raw)
     if not business then return nil, err end
 
-    local _, writeErr = Kora.sql.execute([[INSERT INTO `qbjobcreator` (`id`,`label`,`job`,`modules`) VALUES (?,?,?,?)
+    local _, writeErr = Kora.sql.execute([[INSERT INTO `kora_jobcreator` (`id`,`label`,`job`,`modules`) VALUES (?,?,?,?)
         ON DUPLICATE KEY UPDATE `label` = VALUES(`label`), `job` = VALUES(`job`), `modules` = VALUES(`modules`)]], {
         business.id, business.label, business.job, json.encode(business.modules),
     })
@@ -233,8 +233,8 @@ function State.remove(id)
     local business = State.get(id)
     if not business then return false, 'Unknown business.' end
     local removed = Kora.sql.transaction({
-        { sql = 'DELETE FROM `qbjobcreator` WHERE `id` = ?', params = { id } },
-        { sql = 'INSERT IGNORE INTO `qbjobcreator_deleted` (`id`) VALUES (?)', params = { id } },
+        { sql = 'DELETE FROM `kora_jobcreator` WHERE `id` = ?', params = { id } },
+        { sql = 'INSERT IGNORE INTO `kora_jobcreator_deleted` (`id`) VALUES (?)', params = { id } },
     })
     if not removed then return false, 'Could not delete the business.' end
     QbJobCreator.register.removeBusiness(business)
@@ -247,9 +247,9 @@ end
 ---registers the server-side half of each module.
 ---@return boolean ok, string|nil err
 function State.load()
-    local rows, err = Kora.sql.query('SELECT `id`, `label`, `job`, `modules` FROM `qbjobcreator`')
+    local rows, err = Kora.sql.query('SELECT `id`, `label`, `job`, `modules` FROM `kora_jobcreator`')
     if err then return false, err end
-    local deletedRows, deletedErr = Kora.sql.query('SELECT `id` FROM `qbjobcreator_deleted`')
+    local deletedRows, deletedErr = Kora.sql.query('SELECT `id` FROM `kora_jobcreator_deleted`')
     if deletedErr then return false, deletedErr end
     local deleted = {}
     for _, row in ipairs(deletedRows or {}) do deleted[row.id] = true end

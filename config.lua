@@ -69,7 +69,7 @@ Config.duty = {
 }
 
 Config.logs = {
-    ---Rows kept per business in `qbjobcreator_logs`; older rows are trimmed.
+    ---Rows kept per business in `kora_jobcreator_logs`; older rows are trimmed.
     retain = 500,
 }
 

@@ -1,6 +1,6 @@
 QBJobCreatorTables = {
     {
-        name = 'qbjobcreator',
+        name = 'kora_jobcreator',
         collate = 'utf8mb4_unicode_ci',
         columns = {
             { name = 'id', type = 'varchar(64)' },
@@ -12,11 +12,11 @@ QBJobCreatorTables = {
         },
         primary = { 'id' },
         indexes = {
-            { name = 'qbjobcreator_job', columns = { 'job' } },
+            { name = 'kora_jobcreator_job', columns = { 'job' } },
         },
     },
     {
-        name = 'qbjobcreator_prices',
+        name = 'kora_jobcreator_prices',
         collate = 'utf8mb4_unicode_ci',
         columns = {
             { name = 'shop', type = 'varchar(64)' },
@@ -27,7 +27,7 @@ QBJobCreatorTables = {
         primary = { 'shop', 'item' },
     },
     {
-        name = 'qbjobcreator_logs',
+        name = 'kora_jobcreator_logs',
         collate = 'utf8mb4_unicode_ci',
         columns = {
             { name = 'id', type = 'bigint', unsigned = true, auto_increment = true },
@@ -40,11 +40,11 @@ QBJobCreatorTables = {
         },
         primary = { 'id' },
         indexes = {
-            { name = 'qbjobcreator_logs_business', columns = { 'business', 'id' } },
+            { name = 'kora_jobcreator_logs_business', columns = { 'business', 'id' } },
         },
     },
     {
-        name = 'qbjobcreator_deleted',
+        name = 'kora_jobcreator_deleted',
         collate = 'utf8mb4_unicode_ci',
         columns = {
             { name = 'id', type = 'varchar(64)' },
