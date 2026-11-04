@@ -26,7 +26,7 @@ polygon interaction zones, which kora_lib does not currently expose.
 ensure kora_jobcreator
 ```
 
-The migration runs itself on first boot. `kora_bossmenu` (business bank account)
+The tables are created automatically at startup. `kora_bossmenu` (business bank account)
 and `kora_dispatch` (panic button) are optional — the resource starts and runs
 without either, and says so when you try to use a feature that needs one.
 

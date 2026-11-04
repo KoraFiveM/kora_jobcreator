@@ -18,7 +18,7 @@ State.ready = false
 State.businesses = {}
 
 ---FNV-1a fingerprints definitions for clients and matches the checksum used
----for this resource's migration files.
+---for this resource's schema.
 ---@param value string
 ---@return string
 local checksum = Kora.util.fnv1a
