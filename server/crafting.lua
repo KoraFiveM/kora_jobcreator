@@ -106,7 +106,15 @@ function Crafting.craft(src, recipe, business)
     local given = {}
     for _, product in ipairs(produced) do
         local added = exports.kora_core:addItem(src, product.item, product.amount, nil, product.info)
-        if not added then return false, 'You do not have room for that.' end
+        if not added then
+            -- CanCraftItems already checked combined capacity, so this should not
+            -- happen -- but if it does, the ingredients are already gone. Refund
+            -- them rather than silently destroying items the player paid with.
+            for _, ingredient in ipairs(removed) do
+                exports.kora_core:addItem(src, ingredient.item, ingredient.amount, nil, ingredient.info)
+            end
+            return false, 'You do not have room for that.'
+        end
         given[#given + 1] = ('%dx %s'):format(product.amount, product.item)
     end
 
@@ -144,8 +152,11 @@ Kora.callback.register('qbjobcreator:server:craft', function(src, businessId, mo
     local recipe = Crafting.recipe(recipeId)
     if not recipe then return false, 'Unknown recipe.' end
 
-    local anchor = module.zoneType and module.coords or (module.coords and module.coords[1])
-    if anchor and not Kora.distance.player(src, anchor, 8.0) then
+    -- Reuse the same coordinate/radius boundary every other module check uses,
+    -- rather than a hardcoded radius anchored only to this module's first
+    -- coordinate -- a bench placed at several spots (several grills) must be
+    -- usable from any of them, not just the first one registered.
+    if not State.nearModule(src, module) then
         return false, 'You are not at the bench.'
     end
 

@@ -17,7 +17,6 @@ dependency 'kora_target'
 
 shared_scripts {
     '@kora_lib/init.lua',
-    '@kora_sql/init.lua',
     '@kora_core/init.lua',
     'config.lua',
     'shared/schema.lua',
@@ -30,6 +29,7 @@ shared_scripts {
 -- Load order is deliberate: `state` owns the registry every other file reads,
 -- and `main` runs the boot sequence once the rest have registered themselves.
 server_scripts {
+    '@kora_sql/init.lua',
     'server/config.lua',
     'server/state.lua',
     'server/logs.lua',
