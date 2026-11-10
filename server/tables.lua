@@ -1,4 +1,4 @@
-QBJobCreatorTables = {
+KoraJobCreatorTables = {
     {
         name = 'kora_jobcreator',
         collate = 'utf8mb4_unicode_ci',

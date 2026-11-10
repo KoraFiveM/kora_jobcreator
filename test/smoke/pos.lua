@@ -7,7 +7,7 @@ local accountOps, employeePayments, logEntries = {}, {}, {}
 local stashReads = 0
 local shelfWritten
 
-QbJobCreator = {
+KoraJobCreator = {
     state = {
         get = function(id) return id == business.id and business or nil end,
         worksFor = function() return true end,
@@ -75,7 +75,7 @@ Kora = {
 }
 
 dofile('server/pos.lua')
-local Pos = QbJobCreator.pos
+local Pos = KoraJobCreator.pos
 local module = {
     id = 'front_till', label = 'Front Till', items = { 'burgershot' },
     commission = 10, tax = 10, shopSlots = 10, stockSlots = 10,
@@ -87,9 +87,9 @@ Pos.register(business, module)
 Pos.intake(41, module.id)
 H.equal(#accountOps, 0, 'stock intake does not credit or debit money')
 H.equal(#employeePayments, 0, 'stock intake pays no employee commission')
-H.equal(shelfWritten[1].serverData.qbjobcreator.stocker, 'CID-STOCKER', 'stock carries server-only attribution')
+H.equal(shelfWritten[1].serverData.kora_jobcreator.stocker, 'CID-STOCKER', 'stock carries server-only attribution')
 
-events['qbinventory:server:audit']('purchase', 99, {
+events['kora_inventory:server:audit']('purchase', 99, {
     shop = module.id, item = 'burger', amount = 1, price = 100,
     serverData = shelfWritten[1].serverData,
 })

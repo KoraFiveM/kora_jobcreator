@@ -11,20 +11,20 @@
 -- A business with no perimeter has nothing to trigger that, so all of its
 -- modules live in the static scope instead.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local S = QbJobCreator.schema
-local Client = QbJobCreator.client
+local S = KoraJobCreator.schema
+local Client = KoraJobCreator.client
 
 local Business = {}
-QbJobCreator.Business = Business
+KoraJobCreator.Business = Business
 
 -- kora_lib owns normal entity and zone interactions. kora_target remains a narrow
 -- fallback for polygon interaction zones, which Kora.interact does not expose.
 local target = exports.kora_target
 
----@class QBBossMenuClientExports
----@field openBossMenu fun(self: QBBossMenuClientExports)
+---@class KoraBossMenuClientExports
+---@field openBossMenu fun(self: KoraBossMenuClientExports)
 
 local function newScope()
     return { zones = {}, blips = {}, entities = {}, targets = {} }
@@ -94,7 +94,7 @@ function Business.build(business, scope, startup)
         if S.isStartupModule(business.definition, module) == startup then
             local ok, err = pcall(Business.setup, business, scope, index, module)
             if not ok then
-                print(('^3[qbjobcreator]^7 %s module #%d (%s) failed: %s'):format(business.id, index, module.moduleType, tostring(err)))
+                print(('^3[kora_jobcreator]^7 %s module #%d (%s) failed: %s'):format(business.id, index, module.moduleType, tostring(err)))
             end
         end
     end
@@ -122,7 +122,7 @@ function Business.enter(business)
             if business.controlDuty and Config.duty.enabled then Business.setDuty(business, true) end
             -- Presence means on-duty staff. Auto-duty therefore commits first;
             -- the following callback is independently revalidated server-side.
-            Kora.callback.trigger('qbjobcreator:server:enter', business.id)
+            Kora.callback.trigger('kora_jobcreator:server:enter', business.id)
         end
     end)
 end
@@ -137,7 +137,7 @@ function Business.leave(business, teardownOnly)
 
     if Client.worksFor(business) then
         CreateThread(function()
-            Kora.callback.trigger('qbjobcreator:server:leave', business.id)
+            Kora.callback.trigger('kora_jobcreator:server:leave', business.id)
             if business.controlDuty and Config.duty.enabled then Business.setDuty(business, false) end
         end)
     end
@@ -157,7 +157,7 @@ function Business.setDuty(business, onDuty)
         end
     end
 
-    Kora.callback.trigger('qbjobcreator:server:setDuty', business.id, onDuty)
+    Kora.callback.trigger('kora_jobcreator:server:setDuty', business.id, onDuty)
 end
 
 ---@param scope table
@@ -236,7 +236,7 @@ function Business.attach(business, scope, index, module, entities, options)
     end
 
     local id
-    local name = ('qbjobcreator:%s:%d'):format(business.id, index)
+    local name = ('kora_jobcreator:%s:%d'):format(business.id, index)
     if module.zoneType == 'sphere' then
         id = Kora.interact.addCircleZone(name, Client.vec3(module.coords), module.radius, {
             options = options,
@@ -330,7 +330,7 @@ builders.BossMenu = function(business, _, _, module)
             if GetResourceState('kora_bossmenu') ~= 'started' then
                 return Client.notify('The boss menu is unavailable.', 'error')
             end
-            ---@type QBBossMenuClientExports
+            ---@type KoraBossMenuClientExports
             local bossMenu = exports.kora_bossmenu
             bossMenu:openBossMenu()
         end,
@@ -342,7 +342,7 @@ builders.Stash = function(_, _, _, module)
         label = module.label,
         icon = module.icon or 'Archive',
         onSelect = function()
-            local ok, err = Kora.callback.trigger('qbjobcreator:server:openStash', module.id)
+            local ok, err = Kora.callback.trigger('kora_jobcreator:server:openStash', module.id)
             if not ok then Client.notify(err or 'You cannot open that.', 'error') end
         end,
     } }
@@ -362,7 +362,7 @@ builders.POS = function(business, _, _, module)
             return (Client.staff[business.id] or 0) == 0
         end,
         onSelect = function()
-            local ok, err = Kora.callback.trigger('qbjobcreator:server:openShop', module.id)
+            local ok, err = Kora.callback.trigger('kora_jobcreator:server:openShop', module.id)
             if not ok then Client.notify(err or 'The till is closed.', 'error') end
         end,
     }
@@ -375,7 +375,7 @@ builders.POS = function(business, _, _, module)
         icon = 'PackagePlus',
         canInteract = function() return Client.worksFor(business) end,
         onSelect = function()
-            local ok, err = Kora.callback.trigger('qbjobcreator:server:openStock', module.id)
+            local ok, err = Kora.callback.trigger('kora_jobcreator:server:openStock', module.id)
             if not ok then Client.notify(err or 'You cannot restock this till.', 'error') end
         end,
     }
@@ -384,14 +384,14 @@ builders.POS = function(business, _, _, module)
         label = 'Set prices',
         icon = 'DollarSign',
         canInteract = function() return Client.isBoss(business) end,
-        onSelect = function() QbJobCreator.openPriceEditor(module.id) end,
+        onSelect = function() KoraJobCreator.openPriceEditor(module.id) end,
     }
 
     options[#options + 1] = {
         label = 'Take a payment',
         icon = 'CreditCard',
         canInteract = function() return Client.worksFor(business) end,
-        onSelect = function() QbJobCreator.takePayment() end,
+        onSelect = function() KoraJobCreator.takePayment() end,
     }
 
     if module.panicButton then
@@ -400,7 +400,7 @@ builders.POS = function(business, _, _, module)
             icon = 'Siren',
             canInteract = function() return Client.worksFor(business) end,
             onSelect = function()
-                local ok, err = Kora.callback.trigger('qbjobcreator:server:panic', business.id, module.id)
+                local ok, err = Kora.callback.trigger('kora_jobcreator:server:panic', business.id, module.id)
                 Client.notify(ok and 'Silent alarm sent.' or (err or 'The alarm did not go through.'), ok and 'success' or 'error')
             end,
         }
@@ -455,7 +455,7 @@ local function openCraftingMenu(business, index, module)
         if not completed then return end
     end
 
-    local ok, message = Kora.callback.trigger('qbjobcreator:server:craft', business.id, index, choice.selectedId)
+    local ok, message = Kora.callback.trigger('kora_jobcreator:server:craft', business.id, index, choice.selectedId)
     Client.notify(message or (ok and 'Done.' or 'That did not work.'), ok and 'success' or 'error')
 end
 

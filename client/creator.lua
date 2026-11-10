@@ -9,13 +9,13 @@
 -- creator, props from its placement tool, and "use what is already there" from
 -- a camera raycast -- so a till sits exactly where the counter is.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local S = QbJobCreator.schema
-local Client = QbJobCreator.client
+local S = KoraJobCreator.schema
+local Client = KoraJobCreator.client
 
 local Creator = {}
-QbJobCreator.creator = Creator
+KoraJobCreator.creator = Creator
 
 local isAdmin = false
 
@@ -344,7 +344,7 @@ local function editModule(business, index, moduleType)
         end
     end
 
-    local ok, result = Kora.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
+    local ok, result = Kora.callback.trigger('kora_jobcreator:server:saveModule', business.id, index, payload)
     Client.notify(ok and 'Module saved. It is live now.' or (result or 'That module was rejected.'), ok and 'success' or 'error')
     return ok == true, ok and tonumber(result) or nil
 end
@@ -357,7 +357,7 @@ end
 ---@return boolean? saved
 local function editModuleData(business, index)
     -- Public definitions omit webhooks; editing needs the authorized full copy.
-    local module, err = Kora.callback.trigger('qbjobcreator:server:module', business.id, index)
+    local module, err = Kora.callback.trigger('kora_jobcreator:server:module', business.id, index)
     if not module then
         Client.notify(err or 'That module no longer exists.', 'error')
         return false
@@ -383,12 +383,12 @@ local function editModuleData(business, index)
     -- is the intentional path for switching types, because each type has a
     -- different field set and placement rule.
     payload.moduleType = module.moduleType
-    local saved, err = Kora.callback.trigger('qbjobcreator:server:saveModule', business.id, index, payload)
+    local saved, err = Kora.callback.trigger('kora_jobcreator:server:saveModule', business.id, index, payload)
     Client.notify(saved and 'Module data saved. It is live now.' or (err or 'That data was rejected.'), saved and 'success' or 'error')
     return saved == true
 end
 
-local APP_ID = 'qbjobcreator:management'
+local APP_ID = 'kora_jobcreator:management'
 local openManagement
 local currentState
 
@@ -420,10 +420,10 @@ local function loadBusinessSummary(state)
     state.balance, state.balanceError, state.logs, state.logsError = nil, nil, {}, nil
     if not state.businessId or not Client.definitions[state.businessId] then return end
 
-    local balance, balanceError = Kora.callback.trigger('qbjobcreator:server:balance', state.businessId)
+    local balance, balanceError = Kora.callback.trigger('kora_jobcreator:server:balance', state.businessId)
     if balance ~= nil then state.balance = balance else state.balanceError = balanceError end
 
-    local logs, logsError = Kora.callback.trigger('qbjobcreator:server:logs', state.businessId, 50)
+    local logs, logsError = Kora.callback.trigger('kora_jobcreator:server:logs', state.businessId, 50)
     if type(logs) == 'table' then state.logs = logs else state.logsError = logsError end
 end
 
@@ -678,7 +678,7 @@ local function appDefinition(state)
         width = 1200,
         height = 800,
         navigation = navigation,
-        footer = 'Data, permissions, and mutations are validated by the qbjobcreator server.',
+        footer = 'Data, permissions, and mutations are validated by the kora_jobcreator server.',
     }
 end
 
@@ -725,7 +725,7 @@ end
 ---@param values table
 local function createBusinessAndResume(state, values)
     CreateThread(function()
-        local businessId, err = Kora.callback.trigger('qbjobcreator:server:createBusiness', values)
+        local businessId, err = Kora.callback.trigger('kora_jobcreator:server:createBusiness', values)
         if not businessId then
             Client.notify(err or 'Could not create that business.', 'error')
             return openManagement(state, 'businesses')
@@ -827,7 +827,7 @@ local function actionHandler(state)
                 return { notice = { tone = 'destructive', message = 'That module no longer exists.' } }
             end
             local previousRev = business.rev
-            local ok, err = Kora.callback.trigger('qbjobcreator:server:removeModule', business.id, index)
+            local ok, err = Kora.callback.trigger('kora_jobcreator:server:removeModule', business.id, index)
             if not ok then return { notice = { tone = 'destructive', message = err or 'Could not delete that module.' } } end
             awaitBusiness(business.id, previousRev)
             state.moduleIndex = nil
@@ -835,7 +835,7 @@ local function actionHandler(state)
             return { update = appUpdate(state), notice = { tone = 'success', message = 'Module deleted.' } }
         elseif actionId == 'businesses:edit' then
             local previousRev = business.rev
-            local ok, err = Kora.callback.trigger('qbjobcreator:server:editBusiness', business.id, {
+            local ok, err = Kora.callback.trigger('kora_jobcreator:server:editBusiness', business.id, {
                 label = values.label, job = values.job,
             })
             if not ok then return { notice = { tone = 'destructive', message = err or 'That change was rejected.' } } end
@@ -843,7 +843,7 @@ local function actionHandler(state)
             loadBusinessSummary(state)
             return { update = appUpdate(state), notice = { tone = 'success', message = 'Business updated.' } }
         elseif actionId == 'businesses:delete' then
-            local ok, err = Kora.callback.trigger('qbjobcreator:server:deleteBusiness', business.id)
+            local ok, err = Kora.callback.trigger('kora_jobcreator:server:deleteBusiness', business.id)
             if not ok then return { notice = { tone = 'destructive', message = err or 'Could not delete that business.' } } end
             state.businessId, state.moduleIndex, state.balance, state.logs = nil, nil, nil, {}
             return {
@@ -894,7 +894,7 @@ function Creator.open()
     CreateThread(function()
         local jobs = {}
         if isAdmin then
-            local result, err = Kora.callback.trigger('qbjobcreator:server:jobs')
+            local result, err = Kora.callback.trigger('kora_jobcreator:server:jobs')
             if type(result) == 'table' then jobs = result
             elseif err then Client.notify(err, 'error') end
         end

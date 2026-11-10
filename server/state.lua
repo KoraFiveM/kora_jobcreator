@@ -7,11 +7,11 @@
 -- resource touches the table directly, so a definition can never be live on a
 -- client while the database disagrees.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local S = QbJobCreator.schema
+local S = KoraJobCreator.schema
 local State = {}
-QbJobCreator.state = State
+KoraJobCreator.state = State
 
 State.ready = false
 ---@type table<string, table> id -> normalised business
@@ -40,7 +40,7 @@ local function decode(value, fallback)
     return ok and type(decoded) == 'table' and decoded or fallback
 end
 
-QbJobCreator.decode = decode
+KoraJobCreator.decode = decode
 
 ---@param src integer
 ---@return table|nil
@@ -205,7 +205,7 @@ end
 
 ---@param target? integer Server id, or nil for everyone.
 function State.broadcast(target)
-    TriggerClientEvent('qbjobcreator:client:sync', target or -1, State.snapshot())
+    TriggerClientEvent('kora_jobcreator:client:sync', target or -1, State.snapshot())
 end
 
 ---Validates, writes and publishes one business. The single write path.
@@ -222,7 +222,7 @@ function State.persist(raw)
     if writeErr then return nil, 'Could not save the business.' end
 
     State.businesses[stamp(business).id] = business
-    QbJobCreator.register.business(business)
+    KoraJobCreator.register.business(business)
     State.broadcast()
     return business
 end
@@ -237,7 +237,7 @@ function State.remove(id)
         { sql = 'INSERT IGNORE INTO `kora_jobcreator_deleted` (`id`) VALUES (?)', params = { id } },
     })
     if not removed then return false, 'Could not delete the business.' end
-    QbJobCreator.register.removeBusiness(business)
+    KoraJobCreator.register.removeBusiness(business)
     State.businesses[id] = nil
     State.broadcast()
     return true
@@ -262,10 +262,10 @@ function State.load()
         if business then
             State.businesses[stamp(business).id] = business
             for _, rejected in ipairs(business.rejected) do
-                print(('^3[qbjobcreator]^7 %s module #%d rejected: %s'):format(business.id, rejected.index, rejected.err))
+                print(('^3[kora_jobcreator]^7 %s module #%d rejected: %s'):format(business.id, rejected.index, rejected.err))
             end
         else
-            print(('^1[qbjobcreator]^7 skipped business %s: %s'):format(tostring(row.id), tostring(rejectErr)))
+            print(('^1[kora_jobcreator]^7 skipped business %s: %s'):format(tostring(row.id), tostring(rejectErr)))
         end
     end
 
@@ -283,8 +283,8 @@ function State.load()
         local job = type(seed.job) == 'string' and seed.job:lower() or nil
         if seed.jobDefinition and job and not State.jobDefinition(job) then
             local ok, err = exports.kora_core:registerShared('jobs', job, seed.jobDefinition)
-            if ok then print(('^2[qbjobcreator]^7 registered seed job %s'):format(job))
-            else print(('^3[qbjobcreator]^7 could not register seed job %s: %s'):format(job, tostring(err))) end
+            if ok then print(('^2[kora_jobcreator]^7 registered seed job %s'):format(job))
+            else print(('^3[kora_jobcreator]^7 could not register seed job %s: %s'):format(job, tostring(err))) end
         end
     end
 
@@ -296,8 +296,8 @@ function State.load()
         local id = S.slug(seed.id or seed.label)
         if id and not State.businesses[id] and not deleted[id] then
             local seeded, seedErr = State.persist(seed)
-            if seeded then print(('^2[qbjobcreator]^7 seeded business %s'):format(seeded.id))
-            else print(('^1[qbjobcreator]^7 could not seed %s: %s'):format(tostring(id), tostring(seedErr))) end
+            if seeded then print(('^2[kora_jobcreator]^7 seeded business %s'):format(seeded.id))
+            else print(('^1[kora_jobcreator]^7 could not seed %s: %s'):format(tostring(id), tostring(seedErr))) end
         end
     end
 
@@ -306,10 +306,10 @@ function State.load()
         -- reassigned in-game -- but nothing job-locked in it will ever appear,
         -- which is worth saying out loud rather than leaving to be discovered.
         if not State.jobDefinition(business.job) then
-            print(('^3[qbjobcreator]^7 %s is assigned to job "%s", which is not registered; its job-locked modules will not appear.')
+            print(('^3[kora_jobcreator]^7 %s is assigned to job "%s", which is not registered; its job-locked modules will not appear.')
                 :format(business.id, business.job))
         end
-        QbJobCreator.register.business(business)
+        KoraJobCreator.register.business(business)
     end
     return true
 end

@@ -4,12 +4,12 @@
 -- flow and only asks the client for the one piece of information a person has
 -- to supply. Nothing in this file decides an outcome -- it collects an answer.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local Client = QbJobCreator.client
+local Client = KoraJobCreator.client
 
 ---Asked when an employee restocks an item this till has no fixed price for.
-Kora.callback.register('qbjobcreator:client:setPrice', function(request)
+Kora.callback.register('kora_jobcreator:client:setPrice', function(request)
     local result = Kora.nui.openInputDialog({
         {
             id = 'price', label = ('Price for %s'):format(request.label or request.item),
@@ -21,7 +21,7 @@ Kora.callback.register('qbjobcreator:client:setPrice', function(request)
 end)
 
 ---Asked of the employee taking a card payment.
-Kora.callback.register('qbjobcreator:client:billAmount', function(request)
+Kora.callback.register('kora_jobcreator:client:billAmount', function(request)
     local result = Kora.nui.openInputDialog({
         { id = 'amount', label = 'Amount', type = 'number', required = true, min = 1, max = request.max },
     }, 'Take a payment')
@@ -30,7 +30,7 @@ Kora.callback.register('qbjobcreator:client:billAmount', function(request)
 end)
 
 ---Asked of the customer being billed.
-Kora.callback.register('qbjobcreator:client:approveBill', function(request)
+Kora.callback.register('kora_jobcreator:client:approveBill', function(request)
     local result = Kora.nui.openAlert({
         title = request.business or 'Payment',
         message = ('Pay $%d?'):format(request.amount),
@@ -41,7 +41,7 @@ Kora.callback.register('qbjobcreator:client:approveBill', function(request)
 end)
 
 ---@param target? integer Server id; asked for when not supplied.
-function QbJobCreator.takePayment(target)
+function KoraJobCreator.takePayment(target)
     if not target then
         local result = Kora.nui.openInputDialog({
             { id = 'id', label = 'Player ID', type = 'number', required = true, min = 1 },
@@ -51,7 +51,7 @@ function QbJobCreator.takePayment(target)
     end
     if not target then return end
 
-    local ok, err = Kora.callback.trigger('qbjobcreator:server:requestPayment', target)
+    local ok, err = Kora.callback.trigger('kora_jobcreator:server:requestPayment', target)
     if not ok then Client.notify(err or 'The payment did not go through.', 'error') end
 end
 
@@ -69,14 +69,14 @@ CreateThread(function()
         onSelect = function(entity)
             local index = NetworkGetPlayerIndexFromPed(entity)
             if index == -1 then return end
-            QbJobCreator.takePayment(GetPlayerServerId(index))
+            KoraJobCreator.takePayment(GetPlayerServerId(index))
         end,
     } }, Config.payment.distance)
 end)
 
 ---@param shopId string
-function QbJobCreator.openPriceEditor(shopId)
-    local till, err = Kora.callback.trigger('qbjobcreator:server:tillPrices', shopId)
+function KoraJobCreator.openPriceEditor(shopId)
+    local till, err = Kora.callback.trigger('kora_jobcreator:server:tillPrices', shopId)
     if not till then return Client.notify(err or 'You cannot set prices here.', 'error') end
     if #till.items == 0 then return Client.notify('There is nothing on the shelf to price.', 'info') end
 
@@ -104,6 +104,6 @@ function QbJobCreator.openPriceEditor(shopId)
     }, 'Set a price')
     if not result or result.cancelled then return end
 
-    local ok, setErr = Kora.callback.trigger('qbjobcreator:server:setTillPrice', shopId, slot, tonumber(result.values.price))
+    local ok, setErr = Kora.callback.trigger('kora_jobcreator:server:setTillPrice', shopId, slot, tonumber(result.values.price))
     Client.notify(ok and 'Price updated.' or (setErr or 'Could not update that price.'), ok and 'success' or 'error')
 end

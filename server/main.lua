@@ -1,35 +1,35 @@
 -- Boot sequence and lifecycle.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local State = QbJobCreator.state
-local Pos = QbJobCreator.pos
-local Logs = QbJobCreator.logs
+local State = KoraJobCreator.state
+local Pos = KoraJobCreator.pos
+local Logs = KoraJobCreator.logs
 
 CreateThread(function()
     if not Kora.sql.ready(60000) then
-        return print('^1[qbjobcreator]^7 qbsql was not ready; resource disabled.')
+        return print('^1[kora_jobcreator]^7 kora_sql was not ready; resource disabled.')
     end
 
-    local reports, err = Kora.sql.ensureTables(QBJobCreatorTables)
-    if err then return print(('^1[qbjobcreator]^7 schema failed: %s'):format(err)) end
+    local reports, err = Kora.sql.ensureTables(KoraJobCreatorTables)
+    if err then return print(('^1[kora_jobcreator]^7 schema failed: %s'):format(err)) end
 
     for _, report in ipairs(reports or {}) do
         for _, warning in ipairs(report.warnings or {}) do
-            print(('^3[qbjobcreator]^7 schema %s: %s'):format(report.table, warning))
+            print(('^3[kora_jobcreator]^7 schema %s: %s'):format(report.table, warning))
         end
     end
 
     Pos.loadPrices()
 
     local ok, loadErr = State.load()
-    if not ok then return print(('^1[qbjobcreator]^7 could not load businesses: %s'):format(tostring(loadErr))) end
+    if not ok then return print(('^1[kora_jobcreator]^7 could not load businesses: %s'):format(tostring(loadErr))) end
 
     State.ready = true
 
     local count = 0
     for _ in pairs(State.businesses) do count = count + 1 end
-    print(('^2[qbjobcreator]^7 %d business(es) live.'):format(count))
+    print(('^2[kora_jobcreator]^7 %d business(es) live.'):format(count))
 
     State.broadcast()
 end)

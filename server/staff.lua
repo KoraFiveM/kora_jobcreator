@@ -4,11 +4,11 @@
 -- the current job, duty state and live ped proximity before presence is accepted
 -- or counted. Cached claims are pruned as those facts change.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local State = QbJobCreator.state
+local State = KoraJobCreator.state
 local Staff = {}
-QbJobCreator.staff = Staff
+KoraJobCreator.staff = Staff
 
 ---@type table<string, table<integer, true>> businessId -> set of sources
 local present = {}
@@ -24,7 +24,7 @@ local function rawCounts()
 end
 
 local function publish()
-    TriggerClientEvent('qbjobcreator:client:staff', -1, rawCounts())
+    TriggerClientEvent('kora_jobcreator:client:staff', -1, rawCounts())
 end
 
 ---@param onlySource? integer
@@ -117,7 +117,7 @@ AddEventHandler('QBCore:Server:SetDuty', function(src, onDuty)
 end)
 ---Sent by a client that is stopping this resource: it is still connected, so
 ---nothing else would ever clear its presence.
-RegisterNetEvent('qbjobcreator:server:leaveAll', function() forget(source) end)
+RegisterNetEvent('kora_jobcreator:server:leaveAll', function() forget(source) end)
 
 -- A forged client never gets counted in the first place, and this sweep closes
 -- stale position/lifecycle windows even if its matching leave event never came.
@@ -128,18 +128,18 @@ CreateThread(function()
     end
 end)
 
-Kora.callback.register('qbjobcreator:server:enter', function(src, businessId)
+Kora.callback.register('kora_jobcreator:server:enter', function(src, businessId)
     return Staff.enter(src, businessId)
 end, { rateLimit = { max = 20, window = 10000 } })
 
-Kora.callback.register('qbjobcreator:server:leave', function(src, businessId)
+Kora.callback.register('kora_jobcreator:server:leave', function(src, businessId)
     return Staff.leave(src, businessId)
 end, { rateLimit = { max = 20, window = 10000 } })
 
 ---Auto duty. The client decides WHEN (it owns the perimeter), the server
 ---decides WHETHER: it re-reads the caller's real job rather than trusting the
 ---business id to imply one.
-Kora.callback.register('qbjobcreator:server:setDuty', function(src, businessId, onDuty)
+Kora.callback.register('kora_jobcreator:server:setDuty', function(src, businessId, onDuty)
     if not Config.duty.enabled then return false, 'Automatic duty is disabled.' end
     local business = State.get(businessId)
     if not business then return false, 'Unknown business.' end

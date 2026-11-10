@@ -6,11 +6,11 @@
 -- diffing zone geometry, prop placement and target registrations against each
 -- other for no measurable gain.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local Client = QbJobCreator.client
-local Business = QbJobCreator.Business
-local Creator = QbJobCreator.creator
+local Client = KoraJobCreator.client
+local Business = KoraJobCreator.Business
+local Creator = KoraJobCreator.creator
 
 local RESOURCE = GetCurrentResourceName()
 
@@ -49,9 +49,9 @@ local function apply(definitions)
     Creator.refresh()
 end
 
-RegisterNetEvent('qbjobcreator:client:sync', apply)
+RegisterNetEvent('kora_jobcreator:client:sync', apply)
 
-RegisterNetEvent('qbjobcreator:client:staff', function(counts)
+RegisterNetEvent('kora_jobcreator:client:staff', function(counts)
     Client.staff = type(counts) == 'table' and counts or {}
     Creator.refresh()
 end)
@@ -86,9 +86,9 @@ RegisterNetEvent('QBCore:Client:OnJobUpdate', function()
             if business.inside then
                 if Client.worksFor(business) then
                     if business.controlDuty and Config.duty.enabled then Business.setDuty(business, true) end
-                    Kora.callback.trigger('qbjobcreator:server:enter', business.id)
+                    Kora.callback.trigger('kora_jobcreator:server:enter', business.id)
                 else
-                    Kora.callback.trigger('qbjobcreator:server:leave', business.id)
+                    Kora.callback.trigger('kora_jobcreator:server:leave', business.id)
                 end
             end
         end
@@ -102,7 +102,7 @@ local function hydrate()
     -- requests only duplicate work and can consume the server callback quota.
     if hydrating then return false end
     hydrating = true
-    local data = Kora.callback.trigger('qbjobcreator:server:hydrate')
+    local data = Kora.callback.trigger('kora_jobcreator:server:hydrate')
     if type(data) == 'table' then
         Creator.setAdmin(data.admin)
         Client.staff = data.staff or {}
@@ -123,7 +123,7 @@ AddEventHandler('onClientResourceStop', function(resource)
     if resource ~= RESOURCE then return end
     -- The server cannot observe one client stopping a resource, so tell it
     -- rather than leaving this player counted as standing in a shop forever.
-    TriggerServerEvent('qbjobcreator:server:leaveAll')
+    TriggerServerEvent('kora_jobcreator:server:leaveAll')
     for _, business in pairs(live) do Business.destroy(business, true) end
     live = {}
 end)

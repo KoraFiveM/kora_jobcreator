@@ -6,13 +6,13 @@
 -- rejection, not a recipe of its own design -- the progress bar it just played
 -- is a presentation detail, and the ingredient check happens here regardless.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local State = QbJobCreator.state
-local Logs = QbJobCreator.logs
+local State = KoraJobCreator.state
+local Logs = KoraJobCreator.logs
 
 local Crafting = {}
-QbJobCreator.crafting = Crafting
+KoraJobCreator.crafting = Crafting
 
 ---@param id any
 ---@return table|nil recipe
@@ -134,7 +134,7 @@ function Crafting.craft(src, recipe, business)
     return true, recipe.completeLabel or ('You made %s.'):format(table.concat(given, ', '))
 end
 
-Kora.callback.register('qbjobcreator:server:craft', function(src, businessId, moduleIndex, recipeId)
+Kora.callback.register('kora_jobcreator:server:craft', function(src, businessId, moduleIndex, recipeId)
     local business = State.get(businessId)
     if not business then return false, 'Unknown business.' end
 

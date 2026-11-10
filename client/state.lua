@@ -1,9 +1,9 @@
 -- Client-side shared state and helpers.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
 local Client = {}
-QbJobCreator.client = Client
+KoraJobCreator.client = Client
 
 ---@type table<string, table> businessId -> definition as replicated
 Client.definitions = {}
@@ -15,7 +15,7 @@ Client.staff = {}
 Client.debug = Config.debug == true
 
 ---@param message string
----@param kind? QBNotifyType
+---@param kind? KoraNotifyType
 function Client.notify(message, kind)
     Kora.notify.send({ title = Config.notifyTitle, message = message, type = kind or 'info' })
 end

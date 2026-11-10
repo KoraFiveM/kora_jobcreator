@@ -35,7 +35,7 @@ H.ok(attach and attach:find('option.onSelect = runSelection', 1, true),
 H.ok(attach and attach:find('option.action = runSelection', 1, true),
     'kora_lib interactions receive the same wrapped selection action')
 H.ok(attach and attach:find('CreateThread(function() select_', 1, true),
-    'onSelect never yields on qbtarget\'s own tick thread')
+    'onSelect never yields on kora_target\'s own tick thread')
 
 H.ok(main:find("RegisterNetEvent('QBCore:Client:OnJobUpdate'", 1, true), 'job changes are handled')
 local jobUpdate = main:match("RegisterNetEvent%('QBCore:Client:OnJobUpdate'.-\nend%)")
@@ -65,20 +65,20 @@ H.ok(business:find('Kora.interact.addEntity', 1, true)
     'entity, sphere and box interactions use kora_lib')
 H.ok(business:find("module.zoneType == 'poly'", 1, true)
     and business:find('target:addPolyZone', 1, true),
-    'qbtarget is retained only for polygon interactions unsupported by Kora.interact')
+    'kora_target is retained only for polygon interactions unsupported by Kora.interact')
 -- Entities must go last: a target registration still points at them.
 H.ok(clear:find('scope.targets', 1, true) < clear:find('for _, entity in ipairs(scope.entities)', 1, true),
     'targets are removed before the entities they point at')
 
 H.nope(creator:find('SaveResourceFile', 1, true), 'the builder never writes a file')
 H.nope(creator:find('setClipboard', 1, true), 'the builder never hands back a snippet to paste')
-H.ok(creator:find("Kora.callback.trigger('qbjobcreator:server:saveModule'", 1, true),
+H.ok(creator:find("Kora.callback.trigger('kora_jobcreator:server:saveModule'", 1, true),
     'a built module goes straight to the server')
 H.ok(creator:find('Kora.zones.startCreator', 1, true), 'zones are placed in-world')
 H.ok(creator:find('Kora.placement.start', 1, true), 'props are placed in-world')
 H.ok(creator:find('Kora.raycast.fromCamera', 1, true), 'an existing object is picked by looking at it')
 
-H.ok(creator:find("local APP_ID = 'qbjobcreator:management'", 1, true),
+H.ok(creator:find("local APP_ID = 'kora_jobcreator:management'", 1, true),
     'the management console has one namespaced AppShell id')
 H.ok(creator:find('Kora.nui.registerApp(definition)', 1, true),
     'business management is registered with AppShell')
@@ -94,9 +94,9 @@ H.ok(creator:find('state.moduleIndex = position or index', 1, true),
 H.ok(creator:find('function Creator.refresh()', 1, true)
     and main:find('Creator.refresh()', 1, true),
     'replicated business and staff changes refresh an open management console')
-H.ok(creator:find("Kora.callback.trigger('qbjobcreator:server:removeModule'", 1, true)
-    and creator:find("Kora.callback.trigger('qbjobcreator:server:editBusiness'", 1, true)
-    and creator:find("Kora.callback.trigger('qbjobcreator:server:deleteBusiness'", 1, true),
+H.ok(creator:find("Kora.callback.trigger('kora_jobcreator:server:removeModule'", 1, true)
+    and creator:find("Kora.callback.trigger('kora_jobcreator:server:editBusiness'", 1, true)
+    and creator:find("Kora.callback.trigger('kora_jobcreator:server:deleteBusiness'", 1, true),
     'AppShell actions still submit intent through the authoritative server callbacks')
 
 local crafting = creator:match('fieldsFor%.Crafting = function%(%).-\nend')
@@ -111,7 +111,7 @@ H.nope(crafting and crafting:find('while true do', 1, true),
 local handlers, created, destroyed, stopping = {}, {}, {}, {}
 local refreshes, leaveAll = 0, 0
 local clientState = { definitions = {} }
-QbJobCreator = {
+KoraJobCreator = {
     client = clientState,
     Business = {
         create = function(definition)
@@ -131,11 +131,11 @@ RegisterNetEvent = function(name, callback) handlers[name] = callback end
 AddEventHandler = RegisterNetEvent
 CreateThread, exports = function() end, function() end
 TriggerServerEvent = function(name)
-    H.equal(name, 'qbjobcreator:server:leaveAll', 'resource stop retains its presence cleanup event')
+    H.equal(name, 'kora_jobcreator:server:leaveAll', 'resource stop retains its presence cleanup event')
     leaveAll = leaveAll + 1
 end
 dofile(arg[1] or 'client/main.lua')
-local sync = handlers['qbjobcreator:client:sync']
+local sync = handlers['kora_jobcreator:client:sync']
 local first, neighbour = { id = 'one', rev = '1' }, { id = 'two', rev = '1' }
 sync({ first, neighbour })
 local original

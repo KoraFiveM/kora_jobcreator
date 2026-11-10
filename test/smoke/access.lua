@@ -8,7 +8,7 @@ local players = {
     [3] = { job = { name = 'police', onduty = true }, coords = { x = 0, y = 0, z = 0 } },
 }
 
-QbJobCreator = { schema = {} }
+KoraJobCreator = { schema = {} }
 Config = { duty = { enabled = true } }
 GetCurrentResourceName = function() return 'kora_jobcreator' end
 GetPlayerPed = function(src) return players[src] and src or 0 end
@@ -33,7 +33,7 @@ Kora = {
 json = { encode = function() return '' end, decode = function() return {} end }
 
 dofile('server/state.lua')
-local State = QbJobCreator.state
+local State = KoraJobCreator.state
 local business = {
     id = 'burgershot', job = 'burgershot', modules = {
         { moduleType = 'Zone', controlDuty = true, zoneType = 'sphere', coords = { x = 0, y = 0, z = 0 }, radius = 10, distance = 2 },
@@ -56,7 +56,7 @@ CreateThread = function() end -- do not execute the production periodic loop her
 Wait = function() end
 
 dofile('server/staff.lua')
-local Staff = QbJobCreator.staff
+local Staff = KoraJobCreator.staff
 H.ok(Staff.enter(1, business.id), 'validated on-duty staff can enter presence')
 H.equal(Staff.countFor(business.id), 1, 'validated presence is counted')
 players[1].job.onduty = false

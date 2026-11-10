@@ -8,14 +8,14 @@
 -- business is re-registered whole rather than diffed, and kora_inventory returns
 -- the existing inventory for an id it already knows rather than resetting it.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local State = QbJobCreator.state
-local Pos = QbJobCreator.pos
-local Crafting = QbJobCreator.crafting
+local State = KoraJobCreator.state
+local Pos = KoraJobCreator.pos
+local Crafting = KoraJobCreator.crafting
 
 local Register = {}
-QbJobCreator.register = Register
+KoraJobCreator.register = Register
 
 ---@type table<string, table> item name -> current business/module binding
 local useables = {}
@@ -48,14 +48,14 @@ end
 handlers.Stash = function(business, module)
     local record = stashes[module.id]
     if record and record.businessId ~= business.id then
-        return print(('^3[qbjobcreator]^7 stash id "%s" is used by both %s and %s; keeping %s'):format(
+        return print(('^3[kora_jobcreator]^7 stash id "%s" is used by both %s and %s; keeping %s'):format(
             module.id, record.businessId, business.id, record.businessId))
     end
     if not record then
         record = { businessId = business.id, module = module, coords = {}, distance = 0 }
         stashes[module.id] = record
     elseif record.module.public ~= module.public then
-        print(('^3[qbjobcreator]^7 stash id "%s" has conflicting access across modules'):format(module.id))
+        print(('^3[kora_jobcreator]^7 stash id "%s" has conflicting access across modules'):format(module.id))
     end
     addBoundary(record, module)
     exports.kora_inventory:RegisterStash(module.id, record.module.label or business.label,
@@ -70,7 +70,7 @@ handlers.UseableItem = function(business, module)
     -- would leave the second registration shadowing the first with no warning.
     local binding = useables[module.item]
     if binding and binding.business then
-        print(('^3[qbjobcreator]^7 item "%s" already has a use handler; %s will not rebind it'):format(module.item, business.id))
+        print(('^3[kora_jobcreator]^7 item "%s" already has a use handler; %s will not rebind it'):format(module.item, business.id))
         return
     end
     if binding then
@@ -112,16 +112,16 @@ function Register.business(business)
         if handler then
             local ok, err = pcall(handler, business, module)
             if not ok then
-                print(('^1[qbjobcreator]^7 could not register %s module of %s: %s'):format(module.moduleType, business.id, tostring(err)))
+                print(('^1[kora_jobcreator]^7 could not register %s module of %s: %s'):format(module.moduleType, business.id, tostring(err)))
             end
         end
     end
 end
 
----qbinventory already gates the stash on its own `groups`, so this is not the
+---kora_inventory already gates the stash on its own `groups`, so this is not the
 ---security boundary -- it exists so a player who cannot open a stash is told
 ---why instead of watching nothing happen.
-Kora.callback.register('qbjobcreator:server:openStash', function(src, stashId)
+Kora.callback.register('kora_jobcreator:server:openStash', function(src, stashId)
     local record = type(stashId) == 'string' and stashes[stashId] or nil
     if not record then return false, 'Unknown stash.' end
     local business = State.get(record.businessId)

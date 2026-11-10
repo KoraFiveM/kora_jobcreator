@@ -25,9 +25,9 @@ local schema = read('shared/schema.lua')
 local manifest = read('fxmanifest.lua')
 
 H.ok(admin:find('State.isAdmin(src)', 1, true), 'the creator checks an admin permission')
-H.ok(state:find('hasPermission', 1, true), 'admin status comes from qbcore, not from the client')
+H.ok(state:find('hasPermission', 1, true), 'admin status comes from kora_core, not from the client')
 for _, callback in ipairs({ 'createBusiness', 'editBusiness', 'deleteBusiness', 'saveModule', 'removeModule' }) do
-    local body = admin:match("register%('qbjobcreator:server:" .. callback .. "'.-\nend, {")
+    local body = admin:match("register%('kora_jobcreator:server:" .. callback .. "'.-\nend, {")
     H.ok(body ~= nil, ('callback %s exists'):format(callback))
     H.ok(body and (body:find('authorise(src', 1, true) or body:find('State.isAdmin(src)', 1, true)),
         ('callback %s authorises its caller'):format(callback))
@@ -55,7 +55,7 @@ H.ok(staff:find('if prune() then publish() end', 1, true), 'stale presence is pe
 -- move. An unlimited one is a free denial-of-service against the server.
 for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
     local registrations, limited = 0, 0
-    for chunk in source:gmatch("Kora%.callback%.register%('qbjobcreator:server:.-\nend[^\n]*") do
+    for chunk in source:gmatch("Kora%.callback%.register%('kora_jobcreator:server:.-\nend[^\n]*") do
         registrations = registrations + 1
         if chunk:find('rateLimit', 1, true) then limited = limited + 1 end
     end
@@ -63,7 +63,7 @@ for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
     -- callback whose body confuses it, quietly skipping the one registration
     -- that was missing a limit. Compare against a plain count of declarations
     -- so a skipped body fails rather than passes.
-    local declared = select(2, source:gsub("Kora%.callback%.register%('qbjobcreator:server:", ''))
+    local declared = select(2, source:gsub("Kora%.callback%.register%('kora_jobcreator:server:", ''))
     H.ok(declared > 0, 'the file registers server callbacks')
     H.equal(registrations, declared, 'every registration body was inspected')
     H.equal(limited, registrations, 'every server callback carries a rate limit')
@@ -81,7 +81,7 @@ H.ok(pos:find('Config.pos.maxPrice', 1, true), 'prices are capped')
 H.ok(payment:find('nearEachOther(src, target)', 1, true), 'a card payment is distance-checked')
 H.equal(select(2, payment:gsub('if not nearEachOther', '')), 2,
     'the distance is re-checked after the dialogs, not only before them')
-H.ok(payment:find('qbjobcreator-card-refund', 1, true),
+H.ok(payment:find('kora_jobcreator-card-refund', 1, true),
     'a failed business credit refunds the customer rather than stranding the money')
 H.ok(payment:find('approved ~= true', 1, true),
     'a timed-out approval is treated as no consent, not as consent')
@@ -89,7 +89,7 @@ H.ok(payment:find('approved ~= true', 1, true),
 H.ok(pos:find("action ~= 'purchase'", 1, true), 'sales are credited from the committed purchase audit')
 H.nope(pos:find("RegisterHook('buyItem'", 1, true),
     'sales are NOT credited from a pre-commit buyItem hook')
-H.nope(pos:find('qbjobcreator-stock-commission', 1, true),
+H.nope(pos:find('kora_jobcreator-stock-commission', 1, true),
     'stocking cannot pay commission from an employee-supplied retail price')
 H.ok(pos:find("Pos.debit(business.job, requested, 'sold-stock commission')", 1, true),
     'commission is released from business revenue only in the committed purchase handler')

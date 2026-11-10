@@ -8,7 +8,7 @@ Feature: kora_jobcreator — Jobs
     Checklist test: Run /jobcreator as admin (sees all) or a boss (own business only): searchable business cards, then Overview / Modules / Activity tabs.
     """
     When I run the command "/jobcreator"
-    Then the "qbjobcreator:management" app opens
+    Then the "kora_jobcreator:management" app opens
     And I confirm: the console shows searchable business cards (admin sees all businesses, a boss sees only their own)
     When I manually: open a business card
     Then I confirm: the Overview, Modules and Activity tabs are shown
@@ -31,7 +31,7 @@ Feature: kora_jobcreator — Jobs
     When I manually: type /jobcreator in chat as an admin and open a business
     And I manually: start adding a module and pick its type
     And I manually: place the zone, prop or ped with the world editor, or press E on an existing object
-    Then the "qbjobcreator:management" app should be open
+    Then the "kora_jobcreator:management" app should be open
     And I confirm: the creator reopens on the same business with the placed coordinates applied
 
   @kora_jobcreator @checklist @checklist:kora_jobcreator:module-live-sync @cat:jobs @needs:admin @manual

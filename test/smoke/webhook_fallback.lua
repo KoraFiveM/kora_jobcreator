@@ -50,7 +50,7 @@ exports = { kora_core = { getPlayerData = function(_, src)
 end } }
 Config = { webhooks = {}, logs = { retain = 50 } }
 assert(load(source, '@' .. logsPath))()
-local Logs = QbJobCreator.logs
+local Logs = KoraJobCreator.logs
 local business = { id = 'synthetic-business', job = 'fixture', label = 'Synthetic Business' }
 local function expectURLs(actual, expected, label)
     eq(#actual, #expected, label .. ' count')
@@ -73,7 +73,7 @@ local function run(label, moduleURL, jobURL, defaultURL, expected, entry)
     eq(sqlRecords[1].params[1], business.id, label .. ' durable log business unchanged')
     eq(sqlRecords[1].params[2], entry.category, label .. ' durable log category unchanged')
     eq(sqlRecords[1].params[3], tostring(entry.message):sub(1, 512), label .. ' durable message truncation unchanged')
-    eq(logRecords[1].name, 'qbjobcreator:' .. entry.category, label .. ' kora_lib event name unchanged')
+    eq(logRecords[1].name, 'kora_jobcreator:' .. entry.category, label .. ' kora_lib event name unchanged')
     eq(logRecords[1].values.message, sqlRecords[1].params[3], label .. ' both log sinks share the same bounded message')
     for _, delivery in ipairs(queued) do
         eq(delivery.callback, nil, label .. ' keeps existing optional callback contract')

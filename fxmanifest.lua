@@ -3,8 +3,6 @@ game 'gta5'
 lua54 'yes'
 
 name 'kora_jobcreator'
--- Keep the legacy resource name resolvable for exports['qbjobcreator'] callers.
-provide 'qbjobcreator'
 author 'qbcore2'
 version '1.0.0'
 description 'kora_lib-native in-game job and business creator'

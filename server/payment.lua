@@ -6,14 +6,14 @@
 -- re-checks the distance between them after both answers, not just before,
 -- because a player can walk away mid-dialog.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local State = QbJobCreator.state
-local Logs = QbJobCreator.logs
-local Pos = QbJobCreator.pos
+local State = KoraJobCreator.state
+local Logs = KoraJobCreator.logs
+local Pos = KoraJobCreator.pos
 
 local Payment = {}
-QbJobCreator.payment = Payment
+KoraJobCreator.payment = Payment
 
 ---@type table<integer, true> employees with a bill already in flight
 local inFlight = {}
@@ -59,11 +59,11 @@ function Payment.request(src, target)
     -- body returns (false, reason) on every rejection, and a two-value capture
     -- would silently drop every one of those reasons.
     local results = table.pack(pcall(function()
-        local answer = Kora.callback.trigger(src, 'qbjobcreator:client:billAmount', { max = Config.payment.maxAmount })
+        local answer = Kora.callback.trigger(src, 'kora_jobcreator:client:billAmount', { max = Config.payment.maxAmount })
         local amount = math.floor(tonumber(answer) or 0)
         if amount <= 0 or amount > Config.payment.maxAmount then return false, 'That amount is not valid.' end
 
-        local approved = Kora.callback.trigger(target, 'qbjobcreator:client:approveBill', {
+        local approved = Kora.callback.trigger(target, 'kora_jobcreator:client:approveBill', {
             amount = amount, business = business.label,
         })
         -- A timed-out callback returns nothing, which is not the same thing as
@@ -72,22 +72,22 @@ function Payment.request(src, target)
 
         if not nearEachOther(src, target) then return false, 'They walked away.' end
 
-        local paid, payErr = exports.kora_core:removeMoney(target, Config.payment.account, amount, 'qbjobcreator-card-payment')
+        local paid, payErr = exports.kora_core:removeMoney(target, Config.payment.account, amount, 'kora_jobcreator-card-payment')
         if not paid then return false, payErr or 'Their payment was declined.' end
 
         local commission = math.floor(amount * Config.payment.commission)
         local toBusiness = amount - commission
 
         if commission > 0 then
-            exports.kora_core:addMoney(src, 'bank', commission, 'qbjobcreator-payment-commission')
+            exports.kora_core:addMoney(src, 'bank', commission, 'kora_jobcreator-payment-commission')
         end
 
         local credited, creditErr = Pos.credit(business.job, toBusiness, 'card payment')
         if not credited then
             -- The business account is unreachable, and the employee is not
             -- allowed to keep the difference, so the customer is made whole.
-            exports.kora_core:addMoney(target, Config.payment.account, amount, 'qbjobcreator-card-refund')
-            if commission > 0 then exports.kora_core:removeMoney(src, 'bank', commission, 'qbjobcreator-payment-rollback') end
+            exports.kora_core:addMoney(target, Config.payment.account, amount, 'kora_jobcreator-card-refund')
+            if commission > 0 then exports.kora_core:removeMoney(src, 'bank', commission, 'kora_jobcreator-payment-rollback') end
             return false, creditErr or 'The business account is unavailable.'
         end
 
@@ -113,12 +113,12 @@ function Payment.request(src, target)
 
     inFlight[src] = nil
     if not results[1] then
-        print(('^1[qbjobcreator]^7 card payment failed: %s'):format(tostring(results[2])))
+        print(('^1[kora_jobcreator]^7 card payment failed: %s'):format(tostring(results[2])))
         return false, 'The payment could not be completed.'
     end
     return table.unpack(results, 2, results.n)
 end
 
-Kora.callback.register('qbjobcreator:server:requestPayment', function(src, target)
+Kora.callback.register('kora_jobcreator:server:requestPayment', function(src, target)
     return Payment.request(src, target)
 end, { rateLimit = { max = 5, window = 15000 } })

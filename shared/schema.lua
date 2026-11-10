@@ -11,10 +11,10 @@
 -- Coordinates are `{ x, y, z, w? }` tables and are converted to vectors at the
 -- point of use on the client.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
 local S = {}
-QbJobCreator.schema = S
+KoraJobCreator.schema = S
 
 local MAX_POLY_POINTS = 64
 local MAX_ENTITY_COORDS = 32

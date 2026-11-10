@@ -53,10 +53,10 @@ local function load(path, target) assert(loadfile(path, 't', target or env))() e
 load('../kora_lib/local/resources/server.lua')
 load('../kora_inventory/config.lua'); load('../kora_inventory/shared.lua'); load('../kora_inventory/server.lua')
 load('../kora_inventory/server/crafting.lua')
-local inventory = env.QbInventory
+local inventory = env.KoraInventory
 local job = {}; for name, value in pairs(env) do job[name] = value end
 job.GetCurrentResourceName = function() return 'kora_jobcreator' end
-job.QbJobCreator = {
+job.KoraJobCreator = {
     logs = { record = function(business, entry) logs[#logs + 1] = { business = business, entry = entry } end, recent = noop },
     pos = { register = noop, resetBusiness = noop },
     staff = { counts = function() return {} end },
@@ -91,9 +91,9 @@ job.Config.recipes.first = { ingredients = { { item = 'ingredient', amount = 2 }
 job.Config.recipes.second = { ingredients = { { item = 'ingredient', amount = 3 } },
     give = { { item = 'recipe_new', amount = 2 } }, completeLabel = 'Second crafted' }
 for _, name in ipairs({ 'state', 'crafting', 'register', 'admin' }) do load(source .. '/' .. name .. '.lua', job) end
-local State, Crafting = job.QbJobCreator.state, job.QbJobCreator.crafting
+local State, Crafting = job.KoraJobCreator.state, job.KoraJobCreator.crafting
 State.ready = true
-local function call(name, ...) return callbacks['qbjobcreator:server:' .. name](7, ...) end
+local function call(name, ...) return callbacks['kora_jobcreator:server:' .. name](7, ...) end
 local function module(item, reward, consume, rolls)
     return { moduleType = 'UseableItem', item = item, consume = consume or 1, useType = 'reward',
         rewards = { { item = reward, amount = 1, chance = 1 } }, rolls = rolls or 1 }

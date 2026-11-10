@@ -5,10 +5,10 @@
 -- has to opt in with a URL when it wants a SEPARATE channel; otherwise the
 -- job's channel (and `Config.webhooks.default`) already receives it.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
 local Logs = {}
-QbJobCreator.logs = Logs
+KoraJobCreator.logs = Logs
 
 local COLORS = {
     sale = 0x2ecc71,
@@ -50,7 +50,7 @@ local function actor(src)
     return data.citizenid, (name:gsub('^%s*(.-)%s*$', '%1'))
 end
 
-QbJobCreator.actor = actor
+KoraJobCreator.actor = actor
 
 ---Records one business event.
 ---@param business table
@@ -68,7 +68,7 @@ function Logs.record(business, entry)
         entry.amount and math.floor(entry.amount) or nil,
     }, function() end)
 
-    Kora.logging.event('qbjobcreator:' .. entry.category, entry.src, {
+    Kora.logging.event('kora_jobcreator:' .. entry.category, entry.src, {
         business = business.id, job = business.job, message = message, amount = entry.amount,
     })
 

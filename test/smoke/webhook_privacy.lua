@@ -38,7 +38,7 @@ server.Kora = {
         end,
     },
 }
-server.QbJobCreator = {
+server.KoraJobCreator = {
     register = { business = noop, removeBusiness = noop }, staff = { counts = function() return {} end },
     logs = { record = noop, recent = function() return {} end },
 }
@@ -54,9 +54,9 @@ local function load(path, env) assert(loadfile(path, 't', env))() end
 load('../kora_lib/modules/util/shared.lua', server)
 load('config.lua', server); load('shared/schema.lua', server)
 load(resource .. '/server/state.lua', server); load(resource .. '/server/admin.lua', server)
-local State = server.QbJobCreator.state
+local State = server.KoraJobCreator.state
 State.ready = true
-local function call(src, name, ...) return assert(callbacks['qbjobcreator:server:' .. name], 'missing callback ' .. name).handler(src, ...) end
+local function call(src, name, ...) return assert(callbacks['kora_jobcreator:server:' .. name], 'missing callback ' .. name).handler(src, ...) end
 local business = assert(State.persist({ id = 'shop', label = 'Shop', job = 'shop', modules = {
     { moduleType = 'POS', id = 'front_till', label = 'Till', zoneType = 'sphere', coords = { x = 0, y = 0, z = 0 }, radius = 1,
         webhook = secret, commission = 10, items = {} },
@@ -111,12 +111,12 @@ client.Kora = {
 }
 client.exports = setmetatable({ kora_core = { getPlayerData = function() return players[currentClient].job end } },
     { __call = function(_, name, handler) registered['client:' .. name] = handler end })
-client.QbJobCreator = { schema = server.QbJobCreator.schema, Business = { create = function() return {} end, destroy = noop } }
+client.KoraJobCreator = { schema = server.KoraJobCreator.schema, Business = { create = function() return {} end, destroy = noop } }
 load('client/state.lua', client); load(resource .. '/client/creator.lua', client); load('client/main.lua', client)
 local publicClient = registered['client:getBusinesses']().shop
 check(publicClient.modules[1].webhook == nil, 'actual client cache/export matches public hydrate')
 do
-    local private = callbacks['qbjobcreator:server:module']
+    local private = callbacks['kora_jobcreator:server:module']
     check(private and private.options.rateLimit, 'private edit read is explicitly rate-limited')
     check(call(3, 'module', 'shop', 1) == nil, 'ordinary caller cannot read module secret')
     check(call(2, 'module', 'shop', 1) == nil, 'business boss without creator permission cannot read module secret')
@@ -130,8 +130,8 @@ do
     check(State.get('shop').modules[1].webhook == secret, 'private module read stays detached')
 end
 currentClient = 1
-client.QbJobCreator.creator.setAdmin(true)
-client.QbJobCreator.creator.open()
+client.KoraJobCreator.creator.setAdmin(true)
+client.KoraJobCreator.creator.open()
 check(app and type(app.onAction) == 'function', 'actual management console opens')
 app.onAction('businesses:select', { itemId = 'shop' })
 app.onAction('businesses:edit-module-data', { itemId = '1' })
@@ -157,14 +157,14 @@ check(State.get('shop').modules[1].webhook == replacement and persisted.shop[1].
     'denied editor cannot change saved webhook')
 adminAllowed = true
 check(call(1, 'removeModule', 'shop', 1), 'authorized actual module removal succeeds')
-client.QbJobCreator.client.definitions.shop = copy(staleBusiness)
+client.KoraJobCreator.client.definitions.shop = copy(staleBusiness)
 beforeDialogs, beforeNotifications = dialogCount, #notifications
 app.onAction('businesses:edit-module-data', { itemId = '1' })
 check(dialogCount == beforeDialogs and #notifications > beforeNotifications and notifications[#notifications].type == 'error',
     'stale cached module deletion prevents dialog and notifies')
 check(#State.get('shop').modules == 0 and #persisted.shop == 0, 'stale editor cannot revive removed module')
 check(call(1, 'deleteBusiness', 'shop'), 'authorized actual business deletion succeeds')
-client.QbJobCreator.client.definitions.shop = copy(staleBusiness)
+client.KoraJobCreator.client.definitions.shop = copy(staleBusiness)
 beforeDialogs, beforeNotifications = dialogCount, #notifications
 app.onAction('businesses:edit-module-data', { itemId = '1' })
 check(dialogCount == beforeDialogs and #notifications > beforeNotifications and notifications[#notifications].type == 'error',

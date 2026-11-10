@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs every qbjobcreator smoke test with plain Lua -- no FiveM, no database.
+# Runs every kora_jobcreator smoke test with plain Lua -- no FiveM, no database.
 #
 # The schema is realm-agnostic on purpose, so it is exercised for real here.
 # The server/client files cannot run outside FXServer, so their suites read the

@@ -71,7 +71,7 @@ end
 local function driverEnsureTables(_, specs, resource, callback)
     startupOrder[#startupOrder + 1] = 'migrate'
     eq(resource, 'kora_jobcreator', 'actual main passes the owning resource name')
-    eq(specs, QBJobCreatorTables, 'actual main ensures the declared schema')
+    eq(specs, KoraJobCreatorTables, 'actual main ensures the declared schema')
     local names = {}
     for _, spec in ipairs(specs) do names[spec.name] = true end
     for _, name in ipairs({ 'kora_jobcreator', 'kora_jobcreator_prices', 'kora_jobcreator_logs', 'kora_jobcreator_deleted' }) do
@@ -133,7 +133,7 @@ dofile('../kora_sql/init.lua')
 GetCurrentResourceName = function() return 'kora_jobcreator' end
 RegisterNetEvent = function() end
 TriggerClientEvent = function(name, target, snapshot)
-    eq(name, 'qbjobcreator:client:sync', 'existing sync event unchanged')
+    eq(name, 'kora_jobcreator:client:sync', 'existing sync event unchanged')
     published[#published + 1] = { target = target, snapshot = clone(snapshot) }
 end
 dofile(root .. 'config.lua')
@@ -143,16 +143,16 @@ dofile(root .. 'shared/businesses/burgershot.lua')
 local function boot()
     assert(load(stateSource, '@' .. statePath))()
     startupOrder = {}
-    QbJobCreator.pos = { register = function() end, resetBusiness = function() end,
+    KoraJobCreator.pos = { register = function() end, resetBusiness = function() end,
         loadPrices = function() startupOrder[#startupOrder + 1] = 'prices' end }
-    QbJobCreator.crafting = { registerUseable = function() end }
-    QbJobCreator.staff = { counts = function() return {} end }
-    QbJobCreator.logs = { record = function(business, entry)
+    KoraJobCreator.crafting = { registerUseable = function() end }
+    KoraJobCreator.staff = { counts = function() return {} end }
+    KoraJobCreator.logs = { record = function(business, entry)
         logs[#logs + 1] = { id = business.id, entry = clone(entry) }
     end }
     dofile(root .. 'server/register.lua')
     dofile(root .. 'server/admin.lua')
-    local State = QbJobCreator.state
+    local State = KoraJobCreator.state
     local threads = {}
     CreateThread = function(fn) threads[#threads + 1] = fn end
     dofile(root .. 'server/main.lua')
@@ -170,17 +170,17 @@ eq(State.get('burgershot').label, 'Burger Shot', 'fresh installation seeds demo'
 eq(#State.get('burgershot').modules, 6, 'shipped modules pass actual validator')
 eq(rows.burgershot.label, 'Burger Shot', 'seed is durably represented by inert row')
 eq(type(jobs.burgershot), 'table', 'seed job registered on first boot')
-local deleted = callbacks['qbjobcreator:server:deleteBusiness']
+local deleted = callbacks['kora_jobcreator:server:deleteBusiness']
 eq(deleted(2, 'burgershot'), false, 'non-admin cannot delete seed')
 eq(State.get('burgershot') ~= nil, true, 'unauthorized delete preserves live seed')
-eq(callbacks['qbjobcreator:server:editBusiness'](1, 'burgershot', { label = 'Edited in game' }), true, 'admin edit succeeds')
+eq(callbacks['kora_jobcreator:server:editBusiness'](1, 'burgershot', { label = 'Edited in game' }), true, 'admin edit succeeds')
 local editedRev = State.get('burgershot').rev
 State = boot()
 eq(State.get('burgershot').label, 'Edited in game', 'restart preserves legitimate edited seed')
 eq(State.get('burgershot').rev, editedRev, 'definition fingerprint survives reload')
 local publicationCount = #published
 failNext = true
-local ok, err = callbacks['qbjobcreator:server:deleteBusiness'](1, 'burgershot')
+local ok, err = callbacks['kora_jobcreator:server:deleteBusiness'](1, 'burgershot')
 eq(ok, false, 'SQL failure rejects delete')
 eq(err, 'Could not delete the business.', 'existing delete failure message preserved')
 eq(#published, publicationCount, 'failed delete emits no replacement world')
@@ -190,7 +190,7 @@ do
     for _, failure in ipairs({ 1, 2, 'commit' }) do
         transactionFail = failure
         publicationCount = #published
-        local failed, failureErr = callbacks['qbjobcreator:server:deleteBusiness'](1, 'burgershot')
+        local failed, failureErr = callbacks['kora_jobcreator:server:deleteBusiness'](1, 'burgershot')
         eq(failed, false, 'transaction false without error rejects deletion at ' .. tostring(failure))
         eq(failureErr, 'Could not delete the business.', 'transaction failure preserves useful public reason')
         eq(State.get('burgershot').label, 'Edited in game', 'transaction failure keeps live definition')
@@ -199,7 +199,7 @@ do
         eq(#published, publicationCount, 'transaction failure emits no sync')
     end
 end
-eq(callbacks['qbjobcreator:server:deleteBusiness'](1, 'burgershot'), true, 'authorized delete reports success')
+eq(callbacks['kora_jobcreator:server:deleteBusiness'](1, 'burgershot'), true, 'authorized delete reports success')
 eq(State.get('burgershot'), nil, 'deleted seed absent from current provider')
 eq(#exported.getBusinesses(), 0, 'deleted seed absent from public snapshot')
 eq(exported.getBusiness('burgershot'), nil, 'deleted seed absent from individual public export')
@@ -210,25 +210,25 @@ State = boot()
 eq(State.get('burgershot') ~= nil, false, 'deleted seed must remain absent after fresh module load')
 eq(type(jobs.burgershot), 'table', 'seed jobs are re-registered independently on later boots')
 eq(#exported.getBusinesses(), 0, 'restart public snapshot matches deletion lifetime')
-local id = callbacks['qbjobcreator:server:createBusiness'](1, { id = 'burgershot', label = 'Recreated manually', job = 'burgershot' })
+local id = callbacks['kora_jobcreator:server:createBusiness'](1, { id = 'burgershot', label = 'Recreated manually', job = 'burgershot' })
 eq(id, 'burgershot', 'existing admin create contract permits explicit recreation of same id')
 eq(State.get('burgershot').label, 'Recreated manually', 'explicit recreation becomes live')
 eq(tombstones.burgershot, true, 'explicit recreation retains only the automatic-seed suppression marker')
 State = boot()
 eq(State.get('burgershot').label, 'Recreated manually', 'manual recreation survives restart without seed overwrite')
 eq(#State.get('burgershot').modules, 0, 'seed modules do not replace manually recreated empty module list')
-eq(callbacks['qbjobcreator:server:deleteBusiness'](1, 'burgershot'), true, 'recreated seed can be deleted again')
+eq(callbacks['kora_jobcreator:server:deleteBusiness'](1, 'burgershot'), true, 'recreated seed can be deleted again')
 State = boot()
 eq(State.get('burgershot') ~= nil, false, 'second restart retains the same deletion policy')
-local manual = callbacks['qbjobcreator:server:createBusiness'](1, { id = 'manual', label = 'Manual', job = 'burgershot' })
+local manual = callbacks['kora_jobcreator:server:createBusiness'](1, { id = 'manual', label = 'Manual', job = 'burgershot' })
 eq(manual, 'manual', 'unseeded business can still be created')
-eq(callbacks['qbjobcreator:server:deleteBusiness'](1, 'manual'), true, 'unseeded business can still be deleted')
+eq(callbacks['kora_jobcreator:server:deleteBusiness'](1, 'manual'), true, 'unseeded business can still be deleted')
 State = boot()
 eq(State.get('manual'), nil, 'unseeded deleted business remains absent in control')
 Config.seeds[#Config.seeds + 1] = { id = 'new_seed', label = 'New seed after install', job = 'burgershot', modules = {} }
 State = boot()
 eq(State.get('new_seed').label, 'New seed after install', 'new configured seed remains eligible on existing installation')
-eq(callbacks['qbjobcreator:server:deleteBusiness'](1, 'new_seed'), true, 'new configured seed is deletable')
+eq(callbacks['kora_jobcreator:server:deleteBusiness'](1, 'new_seed'), true, 'new configured seed is deletable')
 State = boot()
 eq(State.get('new_seed') ~= nil, false, 'new configured seed respects deletion on later startup')
 local configuredSeeds = Config.seeds
@@ -252,6 +252,6 @@ local beforeFailure = State.businesses
 queryFail = true
 local loadOK, loadErr = State.load()
 eq(loadOK, false, 'business query failure rejects startup load')
-eq(loadErr, 'fixture query failure', 'actual qbsql wrapper preserves failure reason')
+eq(loadErr, 'fixture query failure', 'actual kora_sql wrapper preserves failure reason')
 eq(State.businesses, beforeFailure, 'failed query leaves existing mirror alone')
 H.finish('seed_lifecycle')

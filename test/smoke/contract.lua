@@ -24,7 +24,7 @@ for _, dependency in ipairs({ 'kora_lib', 'kora_sql', 'kora_core', 'kora_invento
     H.ok(manifest:find(("dependency '%s'"):format(dependency), 1, true), 'depends on ' .. dependency)
 end
 H.ok(manifest:find("'@kora_lib/init.lua'", 1, true), 'loads the kora_lib mirror')
-H.ok(manifest:find("'@kora_core/init.lua'", 1, true), 'loads the qbcore mirror')
+H.ok(manifest:find("'@kora_core/init.lua'", 1, true), 'loads the kora_core mirror')
 H.ok(manifest:find("'shared/schema.lua'", 1, true), 'the schema is shared by both realms')
 H.ok(manifest:find("'config.lua',", 1, true), 'config loads before the shared files that append to it')
 H.ok(manifest:find("'server/tables.lua'", 1, true) and not manifest:find('sql/00', 1, true), 'the table schema is a loaded script, not a packaged sql file')
@@ -50,8 +50,8 @@ for _, path in ipairs({ 'shared/schema.lua', 'shared/recipes/%*%.lua', 'shared/b
 end
 
 local registered, triggered = {}, {}
-for name in server:gmatch("Kora%.callback%.register%('(qbjobcreator:server:[%w:]+)'") do registered[name] = true end
-for name in client:gmatch("Kora%.callback%.trigger%('(qbjobcreator:server:[%w:]+)'") do triggered[name] = true end
+for name in server:gmatch("Kora%.callback%.register%('(kora_jobcreator:server:[%w:]+)'") do registered[name] = true end
+for name in client:gmatch("Kora%.callback%.trigger%('(kora_jobcreator:server:[%w:]+)'") do triggered[name] = true end
 
 local triggerCount = 0
 for name in pairs(triggered) do
@@ -61,14 +61,14 @@ end
 H.ok(triggerCount >= 10, 'the client actually exercises the server surface')
 
 local clientRegistered, serverTriggered = {}, {}
-for name in client:gmatch("Kora%.callback%.register%('(qbjobcreator:client:[%w:]+)'") do clientRegistered[name] = true end
-for name in server:gmatch("Kora%.callback%.trigger%(%w+, '(qbjobcreator:client:[%w:]+)'") do serverTriggered[name] = true end
+for name in client:gmatch("Kora%.callback%.register%('(kora_jobcreator:client:[%w:]+)'") do clientRegistered[name] = true end
+for name in server:gmatch("Kora%.callback%.trigger%(%w+, '(kora_jobcreator:client:[%w:]+)'") do serverTriggered[name] = true end
 for name in pairs(serverTriggered) do
     H.ok(clientRegistered[name], ('the server asks %s and the client answers it'):format(name))
 end
 H.equal(next(serverTriggered) ~= nil, true, 'the server does ask the client things')
 
-for event in server:gmatch("TriggerClientEvent%('(qbjobcreator:client:[%w:]+)'") do
+for event in server:gmatch("TriggerClientEvent%('(kora_jobcreator:client:[%w:]+)'") do
     H.ok(client:find(("RegisterNetEvent('%s'"):format(event), 1, true), ('the client handles %s'):format(event))
 end
 
@@ -85,18 +85,18 @@ end
 local bossMenuClient = read('../kora_bossmenu/client/main.lua')
 local bossMenuServer = read('../kora_bossmenu/server/main.lua')
 for _, name in ipairs({ 'openBossMenu' }) do
-    H.ok(client:find(('bossMenu:%s('):format(name), 1, true), ('client calls qbbossmenu:%s'):format(name))
+    H.ok(client:find(('bossMenu:%s('):format(name), 1, true), ('client calls kora_bossmenu:%s'):format(name))
     H.ok(bossMenuClient:find(("exports('%s'"):format(name), 1, true),
-        ('qbbossmenu declares client export %s'):format(name))
+        ('kora_bossmenu declares client export %s'):format(name))
 end
 for _, name in ipairs({ 'addBusinessMoney', 'removeBusinessMoney', 'getBusinessBalance' }) do
-    H.ok(server:find(('bossMenu:%s('):format(name), 1, true), ('server calls qbbossmenu:%s'):format(name))
+    H.ok(server:find(('bossMenu:%s('):format(name), 1, true), ('server calls kora_bossmenu:%s'):format(name))
     H.ok(bossMenuServer:find(("exports('%s'"):format(name), 1, true),
-        ('qbbossmenu declares server export %s'):format(name))
+        ('kora_bossmenu declares server export %s'):format(name))
 end
-H.ok(client:find('---@type QBBossMenuClientExports', 1, true), 'client boss-menu proxy has a LuaLS contract')
-H.ok(server:find('---@type QBBossMenuLedgerExports', 1, true), 'ledger proxy has a LuaLS contract')
-H.ok(server:find('---@type QBBossMenuBalanceExports', 1, true), 'balance proxy has a LuaLS contract')
+H.ok(client:find('---@type KoraBossMenuClientExports', 1, true), 'client boss-menu proxy has a LuaLS contract')
+H.ok(server:find('---@type KoraBossMenuLedgerExports', 1, true), 'ledger proxy has a LuaLS contract')
+H.ok(server:find('---@type KoraBossMenuBalanceExports', 1, true), 'balance proxy has a LuaLS contract')
 
 --
 -- Every optional dependency must be probed before use: this resource has to
@@ -110,7 +110,7 @@ end
 -- Shop stock lives in kora_inventory, not in a second table here: two records of
 -- the same shelf is exactly the bug this design exists to avoid.
 H.ok(server:find('GetShopItems', 1, true) and server:find('SetShopItems', 1, true),
-    'shop stock is read and written through qbinventory')
+    'shop stock is read and written through kora_inventory')
 local tables = {}
 for name in read('server/tables.lua'):gmatch("name = '(kora_jobcreator[%w_]*)',\n        collate") do tables[#tables + 1] = name end
 H.equal(#tables, 4, 'the schema declares exactly the four tables this resource owns')

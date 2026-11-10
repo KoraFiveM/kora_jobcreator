@@ -6,18 +6,18 @@
 -- sources of truth for the same shelf. What this file owns is policy: which
 -- items a till accepts, what they cost, who may open it, and the payout split.
 
-QbJobCreator = QbJobCreator or {}
+KoraJobCreator = KoraJobCreator or {}
 
-local State = QbJobCreator.state
-local Logs = QbJobCreator.logs
-local Staff = QbJobCreator.staff
+local State = KoraJobCreator.state
+local Logs = KoraJobCreator.logs
+local Staff = KoraJobCreator.staff
 
----@class QBBossMenuLedgerExports
----@field addBusinessMoney fun(self: QBBossMenuLedgerExports, jobName: string, amount: number, reason?: string): boolean, string?
----@field removeBusinessMoney fun(self: QBBossMenuLedgerExports, jobName: string, amount: number, reason?: string): boolean, string?
+---@class KoraBossMenuLedgerExports
+---@field addBusinessMoney fun(self: KoraBossMenuLedgerExports, jobName: string, amount: number, reason?: string): boolean, string?
+---@field removeBusinessMoney fun(self: KoraBossMenuLedgerExports, jobName: string, amount: number, reason?: string): boolean, string?
 
 local Pos = {}
-QbJobCreator.pos = Pos
+KoraJobCreator.pos = Pos
 
 ---@type table<string, table> shopId -> { businessId, module }
 local shops = {}
@@ -63,7 +63,7 @@ local function fixedPrices(module)
                 end
             end
         else
-            print(('^3[qbjobcreator]^7 till %s references unknown shop-item list "%s"'):format(module.id, listName))
+            print(('^3[kora_jobcreator]^7 till %s references unknown shop-item list "%s"'):format(module.id, listName))
         end
     end
     return fixed, restricted
@@ -123,7 +123,7 @@ function Pos.credit(job, amount, reason)
     amount = math.floor(amount or 0)
     if amount <= 0 then return true end
     if not bossMenuReady() then return false, 'no business account resource is running' end
-    ---@type QBBossMenuLedgerExports
+    ---@type KoraBossMenuLedgerExports
     local bossMenu = exports.kora_bossmenu
     return bossMenu:addBusinessMoney(job, amount, reason)
 end
@@ -136,7 +136,7 @@ function Pos.debit(job, amount, reason)
     amount = math.floor(amount or 0)
     if amount <= 0 then return true end
     if not bossMenuReady() then return false, 'no business account resource is running' end
-    ---@type QBBossMenuLedgerExports
+    ---@type KoraBossMenuLedgerExports
     local bossMenu = exports.kora_bossmenu
     return bossMenu:removeBusinessMoney(job, amount, reason)
 end
@@ -183,10 +183,10 @@ function Pos.register(business, module)
     local existing = shops[module.id]
     if existing then
         if existing.businessId ~= business.id then
-            print(('^3[qbjobcreator]^7 till id "%s" is used by both %s and %s; keeping %s'):format(
+            print(('^3[kora_jobcreator]^7 till id "%s" is used by both %s and %s; keeping %s'):format(
                 module.id, existing.businessId, business.id, existing.businessId))
         elseif existing.module.commission ~= module.commission or existing.module.tax ~= module.tax then
-            print(('^3[qbjobcreator]^7 till id "%s" has conflicting commission/tax across modules'):format(module.id))
+            print(('^3[kora_jobcreator]^7 till id "%s" has conflicting commission/tax across modules'):format(module.id))
         end
     end
 
@@ -252,7 +252,7 @@ local function sameInfo(a, b)
 end
 
 local function stockerFor(item)
-    local businessData = item and item.serverData and item.serverData.qbjobcreator
+    local businessData = item and item.serverData and item.serverData.kora_jobcreator
     return type(businessData) == 'table' and businessData.stocker or nil
 end
 
@@ -312,7 +312,7 @@ function Pos.intake(src, shopId)
             else
                 local price, isFixed = Pos.priceFor(shopId, name)
                 if not price and not isFixed then
-                    local answer = Kora.callback.trigger(src, 'qbjobcreator:client:setPrice', {
+                    local answer = Kora.callback.trigger(src, 'kora_jobcreator:client:setPrice', {
                         item = name, label = item.label or name, max = Config.pos.maxPrice,
                     })
                     price = tonumber(answer)
@@ -344,7 +344,7 @@ function Pos.intake(src, shopId)
                     -- from views and purchased item metadata, but returns it in
                     -- the committed purchase audit for post-sale commission.
                     serverData = existing and existing.serverData or {
-                        qbjobcreator = { business = business.id, shop = shopId, stocker = stocker },
+                        kora_jobcreator = { business = business.id, shop = shopId, stocker = stocker },
                     },
                 }
                 remaining[slot] = nil
@@ -366,7 +366,7 @@ function Pos.intake(src, shopId)
     if not ok then
         intaking[shopId] = nil
         Kora.notify.send(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
-        print(('^3[qbjobcreator]^7 could not stock %s: %s'):format(shopId, tostring(err)))
+        print(('^3[kora_jobcreator]^7 could not stock %s: %s'):format(shopId, tostring(err)))
         return
     end
     local cleared, clearErr = exports.kora_inventory:SetStashItems(stockId(shopId), remaining)
@@ -374,7 +374,7 @@ function Pos.intake(src, shopId)
         -- The shelf already has the goods, so leaving them in the stash too
         -- would duplicate them. Nothing can undo the shelf write from here;
         -- say so loudly rather than letting it pass unnoticed.
-        print(('^1[qbjobcreator]^7 stocked %s but could not clear its intake stash: %s')
+        print(('^1[kora_jobcreator]^7 stocked %s but could not clear its intake stash: %s')
             :format(shopId, tostring(clearErr)))
     end
     intaking[shopId] = nil
@@ -407,7 +407,7 @@ end
 
 ---Intake runs when the employee closes the stash, not on every item they drop
 ---in, so a restock is one price prompt per item type instead of one per drag.
-AddEventHandler('qbinventory:server:sessionClosed', function(src, session)
+AddEventHandler('kora_inventory:server:sessionClosed', function(src, session)
     local shopId = shopIdFromStockKey(session and session.secondary)
     if not shopId then return end
     CreateThread(function() Pos.intake(src, shopId) end)
@@ -426,7 +426,7 @@ end, { typeFilter = { stash = true } })
 ---`buyItem` hook: a hook fires BEFORE the purchase is locked and committed, so
 ---crediting there would pay the business for a sale that could still fail on
 ---weight, funds or a stale revision.
-AddEventHandler('qbinventory:server:audit', function(action, src, details)
+AddEventHandler('kora_inventory:server:audit', function(action, src, details)
     if action ~= 'purchase' or type(details) ~= 'table' then return end
     local business, module = Pos.context(details.shop)
     if not business then return end
@@ -437,14 +437,14 @@ AddEventHandler('qbinventory:server:audit', function(action, src, details)
 
     local ok, err = Pos.credit(business.job, net, 'till sale')
     if not ok then
-        print(('^3[qbjobcreator]^7 could not credit %s for a sale: %s'):format(business.job, tostring(err)))
+        print(('^3[kora_jobcreator]^7 could not credit %s for a sale: %s'):format(business.job, tostring(err)))
     end
 
     -- Commission is released only after kora_inventory has committed payment,
     -- stock removal and item delivery. Attribution is server-only data attached
     -- at intake, never an employee-supplied price or a client field.
     local commission = 0
-    local attribution = details.serverData and details.serverData.qbjobcreator
+    local attribution = details.serverData and details.serverData.kora_jobcreator
     if ok and type(attribution) == 'table' and attribution.business == business.id
         and attribution.shop == details.shop and type(attribution.stocker) == 'string' then
         local requested = math.min(math.floor(gross * (module.commission / 100)), net)
@@ -452,7 +452,7 @@ AddEventHandler('qbinventory:server:audit', function(action, src, details)
         if employee then
             local debited = Pos.debit(business.job, requested, 'sold-stock commission')
             if debited then
-                local paid = exports.kora_core:addMoney(employee.source, 'bank', requested, 'qbjobcreator-sale-commission')
+                local paid = exports.kora_core:addMoney(employee.source, 'bank', requested, 'kora_jobcreator-sale-commission')
                 if paid then
                     commission = requested
                     Kora.notify.send(employee.source, {
@@ -494,20 +494,20 @@ local function tillContext(src, shopId, requireBoss)
     return business, record.module
 end
 
-Kora.callback.register('qbjobcreator:server:openShop', function(src, shopId)
+Kora.callback.register('kora_jobcreator:server:openShop', function(src, shopId)
     local record = shops[shopId]
     if not record then return false, 'Unknown till.' end
     return exports.kora_inventory:OpenInventory(src, record.module.id, { type = 'shop', id = record.module.id })
 end, { rateLimit = { max = 10, window = 10000 } })
 
-Kora.callback.register('qbjobcreator:server:openStock', function(src, shopId)
+Kora.callback.register('kora_jobcreator:server:openStock', function(src, shopId)
     local _, _, err = tillContext(src, shopId)
     if err then return false, err end
     return exports.kora_inventory:stashOpen(src, stockId(shopId))
 end, { rateLimit = { max = 10, window = 10000 } })
 
 ---The current shelf, as a boss-facing price list.
-Kora.callback.register('qbjobcreator:server:tillPrices', function(src, shopId)
+Kora.callback.register('kora_jobcreator:server:tillPrices', function(src, shopId)
     local _, module, err = tillContext(src, shopId, true)
     if err then return nil, err end
     local shelf = exports.kora_inventory:GetShopItems(shopId) or {}
@@ -523,7 +523,7 @@ Kora.callback.register('qbjobcreator:server:tillPrices', function(src, shopId)
     return { shop = shopId, label = module.label, max = Config.pos.maxPrice, items = rows }
 end, { rateLimit = { max = 10, window = 10000 } })
 
-Kora.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId, slot, price)
+Kora.callback.register('kora_jobcreator:server:setTillPrice', function(src, shopId, slot, price)
     local business, module, err = tillContext(src, shopId, true)
     if err then return false, err end
 
@@ -550,7 +550,7 @@ Kora.callback.register('qbjobcreator:server:setTillPrice', function(src, shopId,
     return true
 end, { rateLimit = { max = 20, window = 10000 } })
 
-Kora.callback.register('qbjobcreator:server:panic', function(src, businessId, shopId)
+Kora.callback.register('kora_jobcreator:server:panic', function(src, businessId, shopId)
     local record = shops[shopId]
     local business = State.get(businessId)
     if not business or not record or record.businessId ~= business.id then return false, 'Unknown till.' end
