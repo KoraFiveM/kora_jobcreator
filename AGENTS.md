@@ -131,3 +131,11 @@ running server. Update them in the same change as the code.
 * `kora_bossmenu`: its `openStash` callback called `exports.kora_inventory:openInventory`,
   which is a **client-realm** export — the server realm has `OpenInventory` and
   `stashOpen`. Fixed to `stashOpen`.
+
+## Shared contribution standards
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before editing. Humans and agents follow
+the same Kora standards and self-contained local Lua checks. Preserve the domain
+constraints above and in module guides; record policy conflicts explicitly.
+
+Copyright © 2026 Kora Framework (new contribution guidance).
