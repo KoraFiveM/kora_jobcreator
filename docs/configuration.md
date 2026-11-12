@@ -1,6 +1,6 @@
 ---
 title: Configuration
-sidebar_position: 4
+sidebar_position: 7
 ---
 
 # Configuration
@@ -91,7 +91,7 @@ Defined in `server/config.lua` so URLs are never sent to clients (registered as 
 | `default` | Receives every business event. Empty by default. |
 | a job name | The code also reads `Config.webhooks[job]` and sends that job's events there too. Only `default` is registered with the config registry, so confirm a job key survives `Kora.config.adopt` on your server (see [Troubleshooting](./troubleshooting.md)). |
 
-A POS module may add a third URL with its `webhook` field. Duplicate URLs are sent once. Webhook URLs on modules are removed from client snapshots; the exports return them (see [Exports](./exports.md)). Every log entry is also written to `kora_jobcreator_logs` and `Kora.logging.event` regardless of webhooks. Embed colours are set per category: `sale`, `stock`, `payment`, `craft`, `admin`, `panic`.
+A POS module may add a third URL with its `webhook` field. Duplicate URLs are sent once. Webhook URLs on modules are removed from client snapshots; the exports return them (see [Exports](./api/cross-resource-exports.md)). Every log entry is also written to `kora_jobcreator_logs` and `Kora.logging.event` regardless of webhooks. Embed colours are set per category: `sale`, `stock`, `payment`, `craft`, `admin`, `panic`.
 
 ## Libraries
 
