@@ -137,3 +137,5 @@ running server. Update them in the same change as the code.
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before editing. Humans and agents follow
 the same Kora standards and self-contained local Lua checks. Preserve the domain
 constraints above and in module guides; record policy conflicts explicitly.
+
+Copyright © 2026 Kora Framework (new contribution guidance).
