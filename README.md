@@ -215,3 +215,5 @@ Plain Lua, no FiveM and no database. The schema is exercised for real; the
 server and client files are checked against the invariants that matter —
 authorisation, rate limits, rollbacks, and the threading rules around kora_lib's
 shared zone tick and kora_target's shared target loop.
+
+Full documentation: see [docs/](docs/index.md).
