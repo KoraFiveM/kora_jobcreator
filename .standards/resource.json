@@ -1,0 +1,75 @@
+{
+  "resource": "kora_jobcreator",
+  "standardsRevision": "2026-11-12.2",
+  "realms": {
+    "client": [
+      "client/business.lua",
+      "client/creator.lua",
+      "client/main.lua",
+      "client/payment.lua",
+      "client/state.lua"
+    ],
+    "server": [
+      "server/admin.lua",
+      "server/config.lua",
+      "server/crafting.lua",
+      "server/logs.lua",
+      "server/main.lua",
+      "server/payment.lua",
+      "server/pos.lua",
+      "server/register.lua",
+      "server/staff.lua",
+      "server/state.lua",
+      "server/tables.lua"
+    ],
+    "shared": [
+      "config.lua",
+      "shared/businesses/burgershot.lua",
+      "shared/config_registration.lua",
+      "shared/recipes/burgershot.lua",
+      "shared/schema.lua",
+      "shared/shopitems/burgershot.lua"
+    ],
+    "manifest": [
+      "fxmanifest.lua"
+    ],
+    "test": [
+      "test/harness.lua",
+      "test/smoke/access.lua",
+      "test/smoke/client.lua",
+      "test/smoke/contract.lua",
+      "test/smoke/crafting.lua",
+      "test/smoke/pos.lua",
+      "test/smoke/schema.lua",
+      "test/smoke/security.lua",
+      "test/smoke/seed_lifecycle.lua",
+      "test/smoke/seeds.lua",
+      "test/smoke/useables.lua",
+      "test/smoke/webhook_fallback.lua",
+      "test/smoke/webhook_privacy.lua"
+    ]
+  },
+  "exclude": [
+    ".git/*",
+    ".github/*",
+    ".standards/*",
+    "node_modules/*",
+    "**/node_modules/*",
+    "vendor/*",
+    "**/vendor/*",
+    "web/*",
+    "ui/*",
+    "html/*",
+    "dist/*",
+    "artifacts/*",
+    "runtime/*",
+    "txData/*",
+    "storage/*",
+    "stream/*",
+    "docs/*",
+    "__pycache__/*",
+    "modules/lookup/data/*"
+  ],
+  "project": "Kora Framework",
+  "copyright": "Copyright © 2026 Kora Framework"
+}

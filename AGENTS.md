@@ -1,0 +1,141 @@
+# kora_jobcreator agent guide
+
+Modular businesses stored in MySQL and edited in-game. See `README.md` for what
+it does and `docs/index.md` for the reference. This file is about how to
+change it without breaking it.
+
+## Documentation
+
+User-facing documentation lives in `docs/` (Markdown, published via the Kora Docusaurus site, kora_docs_next). Read `docs/index.md` first for an overview of modules, configuration, commands, exports, events and database usage.
+
+Docs layout: `index.md` is the hub with a documentation map of every page; `installation.md` (requirements, manifest order, database schema), `how-to-use.md` (concepts, seeds, crafting flow, permissions, till economics) and `commands.md` (`/jobcreator`, console, in-world UI) are the legacy-derived guides; `api/` holds one page per callback area plus `cross-resource-exports.md` for exports (update it for any export or callback change); topic pages `modules.md`, `configuration.md`, `libraries.md`, `permissions.md`, `events.md`, `database.md`, `items.md`, `troubleshooting.md` are derived from the code. Add new pages to the map in `index.md`.
+
+When you add, change, or remove a feature, config option, command, export, event, item, permission, or database table/column, update the matching page in `docs/` in the same change. Keep docs accurate to the code; do not document behaviour that does not exist.
+
+Docs rules: plain Markdown with `title`/`sidebar_position` front matter (no `id`/`slug`), relative links only between docs pages, assets inside `docs/`, fenced code blocks with a language, and no raw `<`, `>`, `{`, `}` outside code (pages are parsed as MDX). The release version comes from `fxmanifest.lua`'s `version` field.
+
+## Shape
+
+```
+config.lua              policy only -- never business definitions
+shared/schema.lua       the ONE validator, both realms
+shared/{recipes,shopitems,businesses}/   libraries + first-boot seeds
+server/state.lua        registry, persistence funnel, replication
+server/{logs,staff,pos,crafting,payment}.lua
+server/register.lua     server-side half of each module type
+server/admin.lua        creator callbacks + resource exports
+server/main.lua         boot sequence (loads last)
+client/{state,business,payment,creator,main}.lua
+```
+
+Server load order is declared file-by-file in `fxmanifest.lua` and is load
+bearing: `state` owns the registry every other file captures at load time, and
+`main` runs the boot sequence once the rest have registered. `test/smoke/security.lua`
+asserts the ordering, so a reshuffle fails rather than nil-indexing at boot.
+
+## Rules
+
+**One validator.** Everything that can become a live definition — a database
+row, a seed, a creator payload — goes through `S.normaliseBusiness`. The server
+runs it before any write; the client re-runs it only so one malformed module
+skips itself instead of erroring the whole business. Never add a second path
+that constructs a module by hand.
+
+**One write path.** `State.persist` validates, writes the row, updates the
+mirror, then broadcasts, in that order. A failed write leaves both the database
+and the live server untouched. Every mutation applies its change to a *copy* of
+the module list first, so a rejected edit changes nothing.
+
+**The client supplies intent, never data.** A craft request is
+`(businessId, moduleIndex, recipeId)`; the recipe itself is looked up in shared
+config, and only if the bench being used actually offers it. The moment a
+callback starts accepting a table of gameplay values, that is a bug.
+
+**Every server callback carries a `rateLimit`.** They all read the database,
+open a dialog or move money. `test/smoke/security.lua` counts registrations
+against limits and fails if the two ever diverge.
+
+**Shop stock belongs to kora_inventory.** This resource owns pricing policy and
+who may open what; kora_inventory owns the shelf and persists it. Do not add a
+stock table here — `test/smoke/contract.lua` fails if one appears.
+
+**Fixture access is server-bound.** Register stash, stock and shop inventories
+with the full coordinate list returned by `State.moduleBoundary`. Presence,
+automatic duty and panic callbacks share `State.employeeAt`, which resolves job,
+duty and live ped proximity on the server. Cached presence is never authority.
+
+## Threading
+
+`Kora.zones`' tick and the target loop behind `Kora.interact` are **shared across
+every resource on the server**. Both invoke callbacks this resource supplies, and nearly
+everything here yields — streaming a prop, opening a dialog, calling the
+server. Yielding in one of those callbacks stalls every zone or every target in
+the server, not just ours.
+
+So: `Business:enter`/`leave` flip their guard flag synchronously and hand the
+work to a `CreateThread`, and `Business:attach` wraps every option's `onSelect`
+the same way before registering it. `generation` is bumped on both, and the
+build thread checks it before finishing so a player who walks straight back out
+does not leave orphaned props and target registrations behind.
+
+There is no `cache` and no `lib` global here — those are ox_lib. Use
+`PlayerPedId()` / `GetVehiclePedIsIn` and `Kora.*`. `test/smoke/client.lua` greps
+for both.
+
+## Replication
+
+A sync is a full replacement, not a diff, and the client rebuilds a business
+only when its `rev` changes. `rev` is an FNV-1a fingerprint computed **server
+side** in `State.persist`/`State.load` — comparing encoded tables client-side
+would not work, because `json.encode` gives no key-order guarantee and two
+encodes of the same table can differ.
+
+## Adding a module type
+
+1. Add a descriptor to `S.moduleTypes` (`interaction`, and `startup` if it must
+   exist before the player arrives) and a `payloads.<Type>` validator.
+2. Add a `builders.<Type>` to `client/business.lua` returning target options, or
+   `nil` if it has no interaction.
+3. Add a `handlers.<Type>` to `server/register.lua` if it needs a server-side
+   registration (an inventory, a use handler).
+4. Add a `fieldsFor.<Type>` to `client/creator.lua` so it can be built in-game.
+5. Extend `test/smoke/schema.lua`.
+
+Steps 1 and 4 are the ones people forget. A type with no `fieldsFor` entry
+errors when an admin picks it out of the module menu.
+
+## Coordinates
+
+Definitions are JSON: `{ x, y, z, w? }` tables, never vectors, never functions.
+They are converted with `Client.vec3`/`Client.vec4` at the point of use. A
+module's `coords` is a single table for a zone and an **array** for entities —
+`S.coords` wraps a lone coordinate so the client never has to branch on which
+form arrived.
+
+## Tests
+
+`test/run.sh` (plain Lua 5.4, no FiveM, no database). The schema and the shipped
+seeds are exercised for real. `security.lua`, `contract.lua` and `client.lua`
+read the source and assert the invariants above are actually written down —
+that is the only way to check "never yields on the target thread" without a
+running server. Update them in the same change as the code.
+
+## Sibling-resource additions this build needed
+
+* `kora_inventory`: `shopGet`/`shopSet` (`GetShopItems`/`SetShopItems`). Shop stock
+  could be seeded at registration and never changed afterwards — `RegisterShop`
+  only seeds a shop that was not restored, and the transfer path refuses shop
+  inventories outright.
+* `kora_bossmenu`: `removeBusinessMoney`, the mirror of `addBusinessMoney`, so a
+  sold-stock commission can be paid from revenue only after a committed sale.
+* `kora_bossmenu`: its `openStash` callback called `exports.kora_inventory:openInventory`,
+  which is a **client-realm** export — the server realm has `OpenInventory` and
+  `stashOpen`. Fixed to `stashOpen`.
+
+## Shared contribution standards
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before editing. Humans and agents follow
+the same Kora standards and self-contained local Lua checks. Preserve the domain
+constraints above and in module guides; record policy conflicts explicitly.
+
+Copyright © 2026 Kora Framework (new contribution guidance).
