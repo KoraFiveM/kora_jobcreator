@@ -8,6 +8,8 @@ change it without breaking it.
 
 User-facing documentation lives in `docs/` (Markdown, published via the Kora Docusaurus site, kora_docs_next). Read `docs/index.md` first for an overview of modules, configuration, commands, exports, events and database usage.
 
+Docs layout: `index.md` is the hub with a documentation map of every page; `installation.md` (requirements, manifest order, database schema), `how-to-use.md` (concepts, seeds, crafting flow, permissions, till economics) and `commands.md` (`/jobcreator`, console, in-world UI) are the legacy-derived guides; `api/` holds one page per callback area plus `cross-resource-exports.md` for exports (update it for any export or callback change); topic pages `modules.md`, `configuration.md`, `libraries.md`, `permissions.md`, `events.md`, `database.md`, `items.md`, `troubleshooting.md` are derived from the code. Add new pages to the map in `index.md`.
+
 When you add, change, or remove a feature, config option, command, export, event, item, permission, or database table/column, update the matching page in `docs/` in the same change. Keep docs accurate to the code; do not document behaviour that does not exist.
 
 Docs rules: plain Markdown with `title`/`sidebar_position` front matter (no `id`/`slug`), relative links only between docs pages, assets inside `docs/`, fenced code blocks with a language, and no raw `<`, `>`, `{`, `}` outside code (pages are parsed as MDX). The release version comes from `fxmanifest.lua`'s `version` field.

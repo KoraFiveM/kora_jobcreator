@@ -1,17 +1,44 @@
 ---
-title: Commands and UI
-sidebar_position: 6
+title: "Commands"
+sidebar_position: 4
 ---
 
-# Commands and UI
 
-## Command
+# Commands
+
+One chat/console command, client-side, unrestricted at the command layer — access is enforced inside the console it opens, not by who may type the command.
+
+## Built-in commands
+
+### `/jobcreator`
+
+Opens the Job Creator NUI console. An administrator (`Config.adminPermission`, default `admin`) sees the full business directory and may create/edit/delete businesses and modules. A non-admin with a boss grade for at least one business sees only the businesses they manage (balance, activity log, prices). A player with neither is told "You do not manage any business." and nothing opens.
+
+| Field | Details |
+| --- | --- |
+| Context | In-game · client command (`Config.command`) |
+| Arguments | No arguments. |
+| Access | Anyone may run the command; what it shows depends on `kora_core` admin permission or job-boss grade, both re-checked server-side on every action inside the console. |
+
+**Example**
+
+```text
+/jobcreator
+```
+
+**Result**
+
+Opens the `kora_jobcreator:management` NUI app on the Businesses tab (or directly on a business's Overview tab if reopened mid-edit).
+
+## Console and in-world UI
+
+### Command summary
 
 | Command | Access | Description |
 | --- | --- | --- |
 | `/jobcreator` | Everyone to run it | Opens the management console. The name is `Config.command`. An admin sees all businesses; a boss sees the businesses of their job; anyone else gets "You do not manage any business." The command is registered as unrestricted, so access is decided by the checks below. |
 
-## Console
+### Console
 
 The console is a `kora_lib` app (id `kora_jobcreator:management`).
 
@@ -24,7 +51,7 @@ The console is a `kora_lib` app (id `kora_jobcreator:management`).
 
 Adding a module asks for its type, then its anchor, then whether it wants a blip, then type-specific fields. Anchors are placed in the world with the `kora_lib` tools (zone creator for sphere, box and poly; placement tool for prop, ped and vehicle; or aiming at an existing object and pressing E). Placement actions close the console first and reopen it on the same business and module afterwards. "Edit data" shows the module as JSON and saves it through the normal validation. "Rebuild" changes type or placement.
 
-## In-world interactions
+### In-world interactions
 
 Target options are created from module definitions. See [Modules](./modules.md) for what each type adds. The card machine option appears on other players for anyone holding `Config.payment.item`.
 
