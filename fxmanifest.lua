@@ -4,7 +4,7 @@ lua54 'yes'
 
 name 'kora_jobcreator'
 author 'qbcore2'
-version '0.1.0'
+version '0.2.0'
 description 'kora_lib-native in-game job and business creator'
 
 dependency 'kora_lib'
