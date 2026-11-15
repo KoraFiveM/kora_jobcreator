@@ -262,10 +262,10 @@ function State.load()
         if business then
             State.businesses[stamp(business).id] = business
             for _, rejected in ipairs(business.rejected) do
-                print(('^3[kora_jobcreator]^7 %s module #%d rejected: %s'):format(business.id, rejected.index, rejected.err))
+                Kora.logging.warn('state.module_rejected', 'Business module rejected', { businessId = business.id, moduleIndex = rejected.index, error = tostring(rejected.err) })
             end
         else
-            print(('^1[kora_jobcreator]^7 skipped business %s: %s'):format(tostring(row.id), tostring(rejectErr)))
+            Kora.logging.error('state.business_skipped', 'Skipped a business that failed validation', { businessId = tostring(row.id), error = tostring(rejectErr) })
         end
     end
 
@@ -283,8 +283,8 @@ function State.load()
         local job = type(seed.job) == 'string' and seed.job:lower() or nil
         if seed.jobDefinition and job and not State.jobDefinition(job) then
             local ok, err = exports.kora_core:registerShared('jobs', job, seed.jobDefinition)
-            if ok then print(('^2[kora_jobcreator]^7 registered seed job %s'):format(job))
-            else print(('^3[kora_jobcreator]^7 could not register seed job %s: %s'):format(job, tostring(err))) end
+            if ok then Kora.logging.info('state.seed_job_registered', 'Registered seed job', { job = job })
+            else Kora.logging.warn('state.seed_job_failed', 'Could not register seed job', { job = job, error = tostring(err) }) end
         end
     end
 
@@ -296,8 +296,8 @@ function State.load()
         local id = S.slug(seed.id or seed.label)
         if id and not State.businesses[id] and not deleted[id] then
             local seeded, seedErr = State.persist(seed)
-            if seeded then print(('^2[kora_jobcreator]^7 seeded business %s'):format(seeded.id))
-            else print(('^1[kora_jobcreator]^7 could not seed %s: %s'):format(tostring(id), tostring(seedErr))) end
+            if seeded then Kora.logging.info('state.business_seeded', 'Seeded business', { businessId = seeded.id })
+            else Kora.logging.error('state.seed_failed', 'Could not seed business', { businessId = tostring(id), error = tostring(seedErr) }) end
         end
     end
 
@@ -306,8 +306,8 @@ function State.load()
         -- reassigned in-game -- but nothing job-locked in it will ever appear,
         -- which is worth saying out loud rather than leaving to be discovered.
         if not State.jobDefinition(business.job) then
-            print(('^3[kora_jobcreator]^7 %s is assigned to job "%s", which is not registered; its job-locked modules will not appear.')
-                :format(business.id, business.job))
+            Kora.logging.warn('state.job_not_registered', 'Business is assigned to a job that is not registered; its job-locked modules will not appear', {
+                businessId = business.id, job = business.job })
         end
         KoraJobCreator.register.business(business)
     end

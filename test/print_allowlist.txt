@@ -1,0 +1,2 @@
+tools/: CLI tooling scripts (Python/dev tools), not resource runtime code
+.standards/: vendored/generated type definitions (mention of the print field only)

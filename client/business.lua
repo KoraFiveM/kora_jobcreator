@@ -94,7 +94,7 @@ function Business.build(business, scope, startup)
         if S.isStartupModule(business.definition, module) == startup then
             local ok, err = pcall(Business.setup, business, scope, index, module)
             if not ok then
-                print(('^3[kora_jobcreator]^7 %s module #%d (%s) failed: %s'):format(business.id, index, module.moduleType, tostring(err)))
+                Kora.logging.warn('business.module_setup_failed', 'Business module setup failed', { businessId = business.id, moduleIndex = index, moduleType = module.moduleType, error = tostring(err) })
             end
         end
     end
