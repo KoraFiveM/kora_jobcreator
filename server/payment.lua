@@ -113,7 +113,7 @@ function Payment.request(src, target)
 
     inFlight[src] = nil
     if not results[1] then
-        print(('^1[kora_jobcreator]^7 card payment failed: %s'):format(tostring(results[2])))
+        Kora.logging.error('payment.card_failed', 'Card payment failed', { error = tostring(results[2]) })
         return false, 'The payment could not be completed.'
     end
     return table.unpack(results, 2, results.n)

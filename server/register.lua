@@ -48,14 +48,15 @@ end
 handlers.Stash = function(business, module)
     local record = stashes[module.id]
     if record and record.businessId ~= business.id then
-        return print(('^3[kora_jobcreator]^7 stash id "%s" is used by both %s and %s; keeping %s'):format(
-            module.id, record.businessId, business.id, record.businessId))
+        Kora.logging.warn('register.stash_id_conflict', 'Stash id is used by more than one business; keeping the first', {
+            stashId = module.id, keptBusinessId = record.businessId, rejectedBusinessId = business.id })
+        return
     end
     if not record then
         record = { businessId = business.id, module = module, coords = {}, distance = 0 }
         stashes[module.id] = record
     elseif record.module.public ~= module.public then
-        print(('^3[kora_jobcreator]^7 stash id "%s" has conflicting access across modules'):format(module.id))
+        Kora.logging.warn('register.stash_access_conflict', 'Stash id has conflicting access across modules', { stashId = module.id })
     end
     addBoundary(record, module)
     exports.kora_inventory:RegisterStash(module.id, record.module.label or business.label,
@@ -70,7 +71,7 @@ handlers.UseableItem = function(business, module)
     -- would leave the second registration shadowing the first with no warning.
     local binding = useables[module.item]
     if binding and binding.business then
-        print(('^3[kora_jobcreator]^7 item "%s" already has a use handler; %s will not rebind it'):format(module.item, business.id))
+        Kora.logging.warn('register.item_handler_exists', 'Item already has a use handler; it will not be rebound', { item = module.item, businessId = business.id })
         return
     end
     if binding then
@@ -112,7 +113,7 @@ function Register.business(business)
         if handler then
             local ok, err = pcall(handler, business, module)
             if not ok then
-                print(('^1[kora_jobcreator]^7 could not register %s module of %s: %s'):format(module.moduleType, business.id, tostring(err)))
+                Kora.logging.error('register.module_failed', 'Could not register module', { moduleType = module.moduleType, businessId = business.id, error = tostring(err) })
             end
         end
     end

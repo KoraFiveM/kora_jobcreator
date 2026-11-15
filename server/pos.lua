@@ -63,7 +63,7 @@ local function fixedPrices(module)
                 end
             end
         else
-            print(('^3[kora_jobcreator]^7 till %s references unknown shop-item list "%s"'):format(module.id, listName))
+            Kora.logging.warn('pos.unknown_shop_list', 'Till references an unknown shop-item list', { tillId = module.id, list = listName })
         end
     end
     return fixed, restricted
@@ -183,10 +183,10 @@ function Pos.register(business, module)
     local existing = shops[module.id]
     if existing then
         if existing.businessId ~= business.id then
-            print(('^3[kora_jobcreator]^7 till id "%s" is used by both %s and %s; keeping %s'):format(
-                module.id, existing.businessId, business.id, existing.businessId))
+            Kora.logging.warn('pos.till_id_conflict', 'Till id is used by more than one business; keeping the first', {
+                tillId = module.id, keptBusinessId = existing.businessId, rejectedBusinessId = business.id })
         elseif existing.module.commission ~= module.commission or existing.module.tax ~= module.tax then
-            print(('^3[kora_jobcreator]^7 till id "%s" has conflicting commission/tax across modules'):format(module.id))
+            Kora.logging.warn('pos.till_settings_conflict', 'Till id has conflicting commission/tax across modules', { tillId = module.id })
         end
     end
 
@@ -366,7 +366,7 @@ function Pos.intake(src, shopId)
     if not ok then
         intaking[shopId] = nil
         Kora.notify.send(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
-        print(('^3[kora_jobcreator]^7 could not stock %s: %s'):format(shopId, tostring(err)))
+        Kora.logging.warn('pos.stock_failed', 'Could not stock shop', { shopId = shopId, error = tostring(err) })
         return
     end
     local cleared, clearErr = exports.kora_inventory:SetStashItems(stockId(shopId), remaining)
@@ -374,8 +374,7 @@ function Pos.intake(src, shopId)
         -- The shelf already has the goods, so leaving them in the stash too
         -- would duplicate them. Nothing can undo the shelf write from here;
         -- say so loudly rather than letting it pass unnoticed.
-        print(('^1[kora_jobcreator]^7 stocked %s but could not clear its intake stash: %s')
-            :format(shopId, tostring(clearErr)))
+        Kora.logging.error('pos.intake_clear_failed', 'Shop was stocked but its intake stash could not be cleared', { shopId = shopId, error = tostring(clearErr) })
     end
     intaking[shopId] = nil
 
@@ -437,7 +436,7 @@ AddEventHandler('kora_inventory:server:audit', function(action, src, details)
 
     local ok, err = Pos.credit(business.job, net, 'till sale')
     if not ok then
-        print(('^3[kora_jobcreator]^7 could not credit %s for a sale: %s'):format(business.job, tostring(err)))
+        Kora.logging.warn('pos.sale_credit_failed', 'Could not credit the job account for a sale', { job = business.job, error = tostring(err) })
     end
 
     -- Commission is released only after kora_inventory has committed payment,

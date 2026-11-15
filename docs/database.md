@@ -5,7 +5,7 @@ sidebar_position: 11
 
 # Database
 
-Tables are created and checked on start with `Kora.sql.ensureTables` (`server/tables.lua`); schema warnings are printed to the console. If `kora_sql` is not ready within 60 seconds the resource disables itself. No SQL files are shipped. Shop and stash contents are stored by `kora_inventory`, not here.
+Tables are created and checked on start with `Kora.sql.ensureTables` (`server/tables.lua`); schema warnings are written to the Kora logger (`schema.warning`). If `kora_sql` is not ready within 60 seconds the resource disables itself. No SQL files are shipped. Shop and stash contents are stored by `kora_inventory`, not here.
 
 ## `kora_jobcreator`
 

@@ -8,28 +8,29 @@ local Logs = KoraJobCreator.logs
 
 CreateThread(function()
     if not Kora.sql.ready(60000) then
-        return print('^1[kora_jobcreator]^7 kora_sql was not ready; resource disabled.')
+        Kora.logging.error('sql.not_ready', 'kora_sql was not ready; resource disabled')
+        return
     end
 
     local reports, err = Kora.sql.ensureTables(KoraJobCreatorTables)
-    if err then return print(('^1[kora_jobcreator]^7 schema failed: %s'):format(err)) end
+    if err then Kora.logging.error('schema.setup_failed', 'Schema setup failed', { error = tostring(err) }) return end
 
     for _, report in ipairs(reports or {}) do
         for _, warning in ipairs(report.warnings or {}) do
-            print(('^3[kora_jobcreator]^7 schema %s: %s'):format(report.table, warning))
+            Kora.logging.warn('schema.warning', 'Schema check reported a warning', { table = tostring(report.table), warning = tostring(warning) })
         end
     end
 
     Pos.loadPrices()
 
     local ok, loadErr = State.load()
-    if not ok then return print(('^1[kora_jobcreator]^7 could not load businesses: %s'):format(tostring(loadErr))) end
+    if not ok then Kora.logging.error('businesses.load_failed', 'Could not load businesses', { error = tostring(loadErr) }) return end
 
     State.ready = true
 
     local count = 0
     for _ in pairs(State.businesses) do count = count + 1 end
-    print(('^2[kora_jobcreator]^7 %d business(es) live.'):format(count))
+    Kora.logging.info('businesses.live', 'Businesses are live', { count = count })
 
     State.broadcast()
 end)

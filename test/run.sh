@@ -18,5 +18,8 @@ for file in "$dir"/smoke/*.lua; do
     echo
 done
 
+echo "== no_raw_print =="
+if ! ( cd "$dir/.." && "$lua_bin" test/no_raw_print.lua ); then status=1; fi
+
 echo "-- ran $headers suite(s) --"
 exit "$status"

@@ -11,8 +11,11 @@ local stateSource = read(statePath)
 
 local callbacks, published, exported, jobs, registrations, logs = {}, {}, {}, {}, {}, {}
 local startupOrder = {}
+local logged = {}
+local function spy(level) return function(event, message, fields) logged[#logged + 1] = { level = level, event = event, message = message, fields = fields }; return true end end
 Kora = {
     util = {}, compat = {},
+    logging = { trace = spy('trace'), debug = spy('debug'), info = spy('info'), warn = spy('warn'), error = spy('error'), fatal = spy('fatal'), isEnabled = function() return true end },
     blips = { getCategoryIds = function() return { Business = 15, Restaurant = 34 } end },
     shared = {
         get = function(_, name) return jobs[name] end,

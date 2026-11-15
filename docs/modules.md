@@ -100,7 +100,7 @@ Binds an item to a use handler. No anchor.
 
 | Field | Notes |
 | --- | --- |
-| `item` | Required, lower-cased. Bound once; if another business already holds the binding, a console warning is printed and the second is not bound. |
+| `item` | Required, lower-cased. Bound once; if another business already holds the binding, a `register.item_handler_exists` warning is logged and the second is not bound. |
 | `consume` | Items taken per use, 0 to 100, default 1. Refunded if the outcome fails. |
 | `useType` | `reward` (default) or `recipe`. |
 | `rewards` | For `reward`: non-empty list of `item` (or `name`), `amount` (1-1000, default 1), `chance` (relative weight, default 1). |
