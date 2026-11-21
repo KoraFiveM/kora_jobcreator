@@ -1,73 +1,51 @@
 ---
-title: "Card payments"
+title: "Item sales and payments"
 sidebar_position: 5
 ---
 
-
-# Card payments
+# Item sales and payments
 
 ## Client
 
-The portable card machine is registered once globally with `kora_target:addGlobalType('player', ...)` (not per business), gated on the employee carrying `Config.payment.item` (default `cardmachine`) and being within `Config.payment.distance` of the target player. Two client callbacks collect the one piece of information each side must supply: `kora_jobcreator:client:billAmount` (employee) and `kora_jobcreator:client:approveBill` (customer) — the server drives the flow and decides the outcome; the client dialogs never decide anything themselves.
+The till's **Take a payment** option opens an Appshell sale builder. It lists the business's Sales Items, shows the employee's on-hand quantity and item image, and lets the employee choose a quantity and unit price. The portable `cardmachine` player target opens the same builder with the selected customer prefilled. The seller chooses a customer from the player list, including themselves.
 
-Namespace: `Kora.callback (server)` · Source: `client/payment.lua`
+The buyer receives an itemized Appshell invoice and chooses to pay with cash, pay by card, or decline. Cash debits the `cash` account and card debits the `bank` account. Different players must remain within `Config.payment.distance` when the sale is completed. A till sale requires the employee to be at that till; a portable sale requires the employee to carry the configured card machine item.
 
-### Functions
-
-No client exports here — see KoraJobCreator.takePayment / openPriceEditor under Cross-resource exports for the two internal entry points another client script could in principle call.
+Namespace: `Kora.callback` · Source: `client/payment.lua`
 
 ## Server
 
-Validates and settles one card payment: funds move, commission is split, and the business account is credited, with rollback if the business side fails.
+The server validates that the business belongs to the seller's current job, every item is on the business Sales Items list, the seller still has the selected quantities, and the buyer approves the exact invoice. It removes the seller's items and charges the buyer only after approval. Failed payment or business-account credit attempts trigger an item restore and buyer refund.
 
-Namespace: `Kora.callback (server)` · Source: `server/payment.lua`
+Namespace: `Kora.callback` · Source: `server/payment.lua`
 
-### How it works
-
-Wrapped in `pcall` with `table.pack`/`table.unpack` specifically so that any rejection reason returned mid-flow (not just a thrown error) survives being captured — a bare two-value `local ok, err = pcall(...)` would silently drop every `(false, reason)` the body returns on a handled rejection.
-
-### Config.payment (config.lua)
-
-Pass an options table as the final argument to a play function. Omit the table or any field to use its default.
+### Config.payment (`config.lua`)
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `item` | string | Item required to take a payment (default `cardmachine`). |
-| `commission` | number | Fraction of every manual payment paid to the employee (default `0.10`). |
-| `distance` | number | Both players must be within this many metres of each other (default `5.0`), checked both before and after the dialogs. |
-| `maxAmount` | integer | Hard cap on one payment (default 1,000,000). |
-| `account` | string | Account the customer is billed from (default `bank`). |
+| `item` | string | Item required for the portable player target (default `cardmachine`). The till option does not require it. |
+| `commission` | number | Fraction of the sale paid to the employee (default `0.10`). |
+| `distance` | number | Maximum distance between different seller and buyer players (default `5.0`). |
+| `maxAmount` | integer | Hard cap on one sale (default 1,000,000). |
 
-### Functions
+### `Kora.callback.trigger('kora_jobcreator:server:requestPayment', target, businessId, moduleId, items)`
 
-1 server callback.
+Request an item sale. The buyer can be the seller. The client supplies item names, quantities and unit prices, but the server validates the catalog, inventory and total before asking the customer to approve it.
 
-#### `Kora.callback.trigger('kora_jobcreator:server:requestPayment', target)`
-
-An employee bills a nearby player with the portable `cardmachine` item (a global item, not tied to any till). Both halves of the transaction are confirmed by their own owner — the employee names the amount, the customer independently approves it — and distance between them is re-checked AFTER both dialogs answer, since a player can walk away mid-dialog.
-
-**Parameters**
-
-| Name | Type | Description |
+| Parameter | Type | Description |
 | --- | --- | --- |
-| `src` | integer | Player server id. Supplied automatically as the first argument of a `Kora.callback.register` handler — never passed by the client. |
-| `target` | integer | The customer's server id. |
+| `src` | integer | Seller's server id, supplied automatically to the callback. |
+| `target` | integer | Buyer's server id. |
+| `businessId` | string | Business id whose Sales Items list applies; its job must match the seller's current job. |
+| `moduleId` | string or `false` | Till id for an in-world till sale; pass `false` for a portable card machine sale. |
+| `items` | table[] | Array of `{ item, amount, unitPrice }` sale lines. |
 
-**Returns**
-
-- **ok** — true once the customer has been charged and the business credited.
-- **err** — `'You already have a payment in progress.'`, `'You are not working for a business.'` (caller's job matches no business), `'Pick someone else.'`, `'That player is not around.'`, `'They are too far away.'`, `'That amount is not valid.'`, `'The payment was declined.'` (customer declined or their dialog timed out), `'They walked away.'`, a kora_core money-removal reason, or `'The business account is unavailable.'` (the customer and employee are both made whole if this happens after the charge).
-
-**Example**
+Returns `true` after a completed sale, otherwise `false, error`. After the buyer approves, `Config.payment.commission` goes to the seller's bank and the remaining proceeds go to the business account. The callback is rate-limited to 5 calls per 15 seconds.
 
 ```lua
-Kora.callback.trigger('kora_jobcreator:server:requestPayment', 47)
-```
-
-**Representative console output**
-
-```text
-On success: `Config.payment.commission` (default 10%) of the amount goes straight to the employee's bank, the remainder is credited to the business account, and both players are notified. Rate-limited to 5 per 15s.
+Kora.callback.trigger('kora_jobcreator:server:requestPayment', 47, 'burgershot', 'burgershot_till', {
+    { item = 'burger', amount = 2, unitPrice = 12 },
+})
 ```
 
 ### Related guides

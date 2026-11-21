@@ -13,9 +13,11 @@ Current version: see `version` in `fxmanifest.lua`.
 
 - **Business console** - `/jobcreator` opens the management app. Admins see every business and can create, rename, reassign and delete them and edit modules; a boss sees only their own business (overview and activity). See [Commands](./commands.md).
 - **Eight module types** - Zone, Blip, StaticEntity, BossMenu, POS, Stash, Crafting, UseableItem. See [Modules](./modules.md).
-- **Tills** - customer shop plus an employee intake stash, fixed or employee-set prices, sales tax, sold-stock commission, optional panic button and a hide-when-staffed rule. Stock itself is owned by `kora_inventory`.
-- **Card machine** - an employee bills a nearby player, who approves it; the business account is credited. See [Modules](./modules.md#card-machine).
-- **Crafting and useable items** - benches offering recipes from a shared library, and items that roll a weighted reward or run a recipe. See [Libraries and seeds](./libraries.md).
+- **Tills** - customer shop plus an employee intake stash, fixed or employee-set prices, sales tax, sold-stock commission, optional panic button and a hide-when-staffed rule. Till stock itself is owned by `kora_inventory`.
+- **Employee stores** - Appshell ingredient pickup lists with configurable prices and unlimited supply; no inventory shop or stock count is involved.
+- **Itemized payments** - employees build an Appshell sale from Sales Items and their inventory; the buyer reviews the invoice and chooses cash or card. See [Modules](./modules.md#card-machine).
+- **Business recipes and crafters** - create a crafter for a business, organize its recipes by category, and place multiple locations for each category. Recipes created in one business stay separate from other businesses. See [How to use](./how-to-use.md) and [Database](./database.md).
+- **Store categories** - choose shared ingredients and their price, then place employee targets that open an Appshell pickup list with unlimited supply.
 - **Duty and presence** - entering a business zone can clock staff on and off; the server tracks who is inside.
 - **Logging** - sales, restocks, payments, crafts, panic alarms and admin edits are written to a table, to `kora_lib` logging and optionally to Discord. See [Configuration](./configuration.md).
 - **First-boot seed** - a demo Burger Shot business and job. See [Libraries and seeds](./libraries.md#seeds).
@@ -31,6 +33,7 @@ Current version: see `version` in `fxmanifest.lua`.
   - [Point of sale & stashes](./api/pos-stash.md) - shop, stock, prices, panic and stash callbacks.
   - [Card payments](./api/card-payments.md) - the card machine billing flow.
   - [Crafting](./api/crafting.md) - the craft callback and recipe fields.
+  - [Recipes](./api/job-recipes.md) - per-business recipe storage and creator callbacks.
   - [Cross-resource exports](./api/cross-resource-exports.md) - client and server exports.
 - [Modules](./modules.md) - every module type and its fields, tills and the card machine.
 - [Configuration](./configuration.md) - every `config.lua` and server-only option.
