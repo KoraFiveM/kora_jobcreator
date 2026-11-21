@@ -1,25 +1,26 @@
 -- Crafting benches and useable items.
 --
--- The client never sends a recipe. It sends a business id, a module index and a
--- recipe id, and the server looks the recipe up in the same shared config the
--- client rendered from. A client that lies about any of the three gets a
--- rejection, not a recipe of its own design -- the progress bar it just played
--- is a presentation detail, and the ingredient check happens here regardless.
+-- The client never sends a recipe. It sends a business id, a module index, a
+-- crafter category and a recipe id, and the server looks the recipe up itself
+-- (the business's own SQL recipes, then the shared config library). A client
+-- that lies about any of them gets a rejection, not a recipe of its own design
+-- -- the progress bar it just played is a presentation detail, and the
+-- ingredient check happens here regardless.
 
 KoraJobCreator = KoraJobCreator or {}
 
 local State = KoraJobCreator.state
 local Logs = KoraJobCreator.logs
+local Recipes = KoraJobCreator.recipes
 
 local Crafting = {}
 KoraJobCreator.crafting = Crafting
 
 ---@param id any
+---@param businessId? string
 ---@return table|nil recipe
-function Crafting.recipe(id)
-    if type(id) ~= 'string' then return nil end
-    local recipe = Config.recipes[id]
-    return type(recipe) == 'table' and recipe or nil
+function Crafting.recipe(id, businessId)
+    return (Recipes.get(businessId, id))
 end
 
 ---@param recipe table
@@ -134,29 +135,39 @@ function Crafting.craft(src, recipe, business)
     return true, recipe.completeLabel or ('You made %s.'):format(table.concat(given, ', '))
 end
 
-Kora.callback.register('kora_jobcreator:server:craft', function(src, businessId, moduleIndex, recipeId)
+---Accepts `(businessId, moduleIndex, categoryId, recipeId)`. The older
+---three-argument form `(businessId, moduleIndex, recipeId)` still crafts at a
+---single-anchor bench.
+Kora.callback.register('kora_jobcreator:server:craft', function(src, businessId, moduleIndex, categoryId, recipeId)
+    if recipeId == nil then categoryId, recipeId = nil, categoryId end
+    if type(recipeId) == 'number' then recipeId = tostring(math.floor(recipeId)) end
+    if type(recipeId) ~= 'string' then return false, 'Unknown recipe.' end
+
     local business = State.get(businessId)
     if not business then return false, 'Unknown business.' end
 
     local module = State.module(business, moduleIndex)
     if not module or module.moduleType ~= 'Crafting' then return false, 'Unknown crafting bench.' end
-    if not module.public and not State.worksFor(src, business.job) then return false, 'You do not work here.' end
+    -- Crafting is staff work: `public` never opens a business's benches.
+    if not State.worksFor(src, business.job) then return false, 'You do not work here.' end
 
-    -- The recipe must be one THIS bench offers, not merely a recipe that exists.
+    local offeredIds, boundary = Recipes.category(module, categoryId)
+    if not offeredIds then return false, 'Unknown crafting station.' end
+
+    -- The recipe must be one THIS category offers, not merely a recipe that exists.
     local offered = false
-    for _, id in ipairs(module.recipes) do
+    for _, id in ipairs(offeredIds) do
         if id == recipeId then offered = true; break end
     end
     if not offered then return false, 'That is not made here.' end
 
-    local recipe = Crafting.recipe(recipeId)
+    local recipe = Crafting.recipe(recipeId, business.id)
     if not recipe then return false, 'Unknown recipe.' end
 
-    -- Reuse the same coordinate/radius boundary every other module check uses,
-    -- rather than a hardcoded radius anchored only to this module's first
-    -- coordinate -- a bench placed at several spots (several grills) must be
-    -- usable from any of them, not just the first one registered.
-    if not State.nearModule(src, module) then
+    -- Every placed location of the category (or every anchor point of a
+    -- single bench) is checked with the same boundary rule every other module
+    -- uses, so a station placed in several spots works from any of them.
+    if not State.nearModule(src, boundary) then
         return false, 'You are not at the bench.'
     end
 
@@ -179,7 +190,7 @@ function Crafting.registerUseable(business, module, binding)
 
         local ok, message
         if module.useType == 'recipe' then
-            local recipe = Crafting.recipe(module.recipe)
+            local recipe = Crafting.recipe(module.recipe, business.id)
             if not recipe then
                 ok, message = false, 'That recipe no longer exists.'
             else

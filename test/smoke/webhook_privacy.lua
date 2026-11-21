@@ -53,7 +53,8 @@ end
 local function load(path, env) assert(loadfile(path, 't', env))() end
 load('../kora_lib/modules/util/shared.lua', server)
 load('config.lua', server); load('shared/schema.lua', server)
-load(resource .. '/server/state.lua', server); load(resource .. '/server/admin.lua', server)
+load(resource .. '/server/state.lua', server); load(resource .. '/server/recipes.lua', server)
+load(resource .. '/server/admin.lua', server)
 local State = server.KoraJobCreator.state
 State.ready = true
 local function call(src, name, ...) return assert(callbacks['kora_jobcreator:server:' .. name], 'missing callback ' .. name).handler(src, ...) end

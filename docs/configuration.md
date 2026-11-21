@@ -25,7 +25,15 @@ Policy lives in `config.lua` (shared, sent to every client) and `server/config.l
 | `stockSlots` | `50` | Default intake stash slots. |
 | `stockWeight` | `1000000` | Intake stash max weight. |
 | `currency` | `'cash'` | Default customer account, `cash` or `bank`. |
-| `maxPrice` | `1000000` | Highest price an employee or boss may set. |
+| `maxPrice` | `1000000` | Highest price an employee or boss may set, and the highest store price. |
+| `closedShopCut` | `0.20` | Fraction (not percent) of each closed-shop sale withheld rather than credited to the business. |
+
+## Employee stores: `Config.stores`
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `account` | `'bank'` | Account charged when a store is paid for by the employee. `cash` or `bank`. |
+| `maxQuantity` | `100` | Largest quantity one pickup may request. |
 
 ## Stashes: `Config.stash`
 
@@ -93,4 +101,4 @@ Every log entry is also written to `kora_jobcreator_logs` and `Kora.logging.even
 
 ## Libraries
 
-`Config.recipes`, `Config.shopItems` and `Config.seeds` are filled by files in `shared/`. Edits take effect after the resource restarts. Business-specific recipes created from Appshell are stored in `kora_jobcreator_business_recipes` and are available immediately.
+`Config.recipes`, `Config.shopItems` and `Config.seeds` are filled by files in `shared/`. Edits take effect after the resource restarts. Business recipes created on a business's Recipes page are stored in `kora_jobcreator_business_recipes` and are available immediately.

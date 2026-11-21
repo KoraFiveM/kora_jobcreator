@@ -98,9 +98,23 @@ S.moduleTypes = {
     { type = 'BossMenu',     label = 'Boss menu',                 interaction = 'any' },
     { type = 'POS',          label = 'Point of sale (till)',      interaction = 'any' },
     { type = 'Stash',        label = 'Stash',                     interaction = 'any' },
-    { type = 'Crafting',     label = 'Crafting bench',            interaction = 'any' },
+    -- A crafter either owns one anchor (the original single bench) or a list
+    -- of categories that each carry their own locations, so the anchor is
+    -- optional and the payload validator decides which shape it is.
+    { type = 'Crafting',     label = 'Crafting bench',            interaction = 'any',   optionalAnchor = true },
     { type = 'UseableItem',  label = 'Useable item',              interaction = 'none',  serverOnly = true },
+    -- Business-wide catalogue: the items staff may sell and the employee
+    -- pickup stores. One per business; built from its own console pages, so
+    -- it is hidden from the generic "Add module" picker.
+    { type = 'SalesItems',   label = 'Sales items and stores',    interaction = 'none',  managed = true, unique = true },
 }
+
+S.MAX_SALES_ITEMS = 200
+S.MAX_CATEGORIES = 32
+S.MAX_CATEGORY_LOCATIONS = 16
+S.MAX_CATEGORY_RECIPES = 100
+S.MAX_STORE_ITEMS = 100
+S.MAX_RECIPE_ENTRIES = 16
 
 S.moduleType = {}
 for _, entry in ipairs(S.moduleTypes) do S.moduleType[entry.type] = entry end
@@ -157,7 +171,7 @@ end
 
 ---Validates whatever world anchor a module carries and copies it onto `out`.
 ---@return boolean ok, string|nil err
-local function normaliseAnchor(mod, out, allowed)
+local function normaliseAnchor(mod, out, allowed, optional)
     if allowed == 'none' then return true end
 
     local zoneType = str(mod.zoneType, 16)
@@ -196,9 +210,63 @@ local function normaliseAnchor(mod, out, allowed)
         return true
     end
 
+    if optional then return true end
     if allowed == 'zone' then return false, 'this module needs a zone anchor' end
     if allowed == 'model' then return false, 'this module needs an entity anchor' end
     return false, 'this module needs a zone or entity anchor'
+end
+
+---An item name as kora_core stores it.
+---@param value any
+---@return string|nil
+local function itemName(value)
+    local name = str(value, 64)
+    return name and name:lower() or nil
+end
+S.itemName = itemName
+
+---A placed point a category opens from: coordinates plus, optionally, the prop
+---model the builder aimed at when placing it.
+---@param raw any
+---@return table|nil
+local function location(raw)
+    local point = S.coords(raw)
+    if not point then return nil end
+    local model = type(raw) == 'table' and str(raw.model, 64) or nil
+    if model then point.model = model end
+    return point
+end
+
+---@param raw any
+---@return table[]|nil locations, string|nil err
+local function locations(raw)
+    local out = {}
+    if raw == nil then return out end
+    if type(raw) ~= 'table' then return nil, 'locations must be a list' end
+    for _, entry in ipairs(raw) do
+        local point = location(entry)
+        if not point then return nil, 'a location is malformed' end
+        out[#out + 1] = point
+        if #out > S.MAX_CATEGORY_LOCATIONS then return nil, 'too many locations in one category' end
+    end
+    return out
+end
+
+---Category ids are derived from labels and must be unique inside one list.
+---@param raw any
+---@param seen table<string, true>
+---@return string|nil id, string|nil label
+local function categoryIdentity(raw, seen)
+    local label = str(raw.label, 64)
+    local id = S.slug(raw.id) or S.slug(label)
+    if not id then return nil end
+    local base, suffix = id, 2
+    while seen[id] do
+        id = ('%s_%d'):format(base:sub(1, 60), suffix)
+        suffix = suffix + 1
+    end
+    seen[id] = true
+    return id, label or id
 end
 
 ---@param raw any
@@ -292,19 +360,164 @@ payloads.POS = function(mod, out)
     out.shopSlots = int(mod.shopSlots, 1, 500) or (Config and Config.pos and Config.pos.shopSlots) or 50
     out.stockSlots = int(mod.stockSlots, 1, 500) or (Config and Config.pos and Config.pos.stockSlots) or 50
     out.webhook = str(mod.webhook, 512)
+    -- A closed shop is the self-service customer shelf (restock + browse). A
+    -- normal till is staffed: employees take itemized payments at it.
+    out.closedShop = bool(mod.closedShop)
     return true
 end
 
-payloads.Crafting = function(mod, out)
-    if type(mod.recipes) ~= 'table' then return false, 'a crafting bench needs recipes' end
-    out.recipes = {}
-    for _, entry in ipairs(mod.recipes) do
-        local name = str(entry, 64)
-        if not name then return false, 'a recipe reference is malformed' end
-        out.recipes[#out.recipes + 1] = name
+---@param raw any
+---@return string[]|nil ids, string|nil err
+local function recipeRefs(raw, max)
+    local out, seen = {}, {}
+    if raw == nil then return out end
+    if type(raw) ~= 'table' then return nil, 'recipes must be a list of recipe ids' end
+    for _, entry in ipairs(raw) do
+        local id = type(entry) == 'number' and tostring(math.floor(entry)) or str(entry, 64)
+        if not id then return nil, 'a recipe reference is malformed' end
+        if not seen[id] then
+            seen[id] = true
+            out[#out + 1] = id
+            if #out > max then return nil, 'too many recipes in one category' end
+        end
     end
-    if #out.recipes == 0 then return false, 'a crafting bench needs at least one recipe' end
+    return out
+end
+
+payloads.Crafting = function(mod, out)
+    -- The original shape: one anchored bench offering a flat recipe list.
+    if out.zoneType or out.model then
+        local recipes, err = recipeRefs(mod.recipes, S.MAX_CATEGORY_RECIPES)
+        if not recipes then return false, err end
+        if #recipes == 0 then return false, 'a crafting bench needs at least one recipe' end
+        out.recipes = recipes
+        return true
+    end
+
+    -- The category shape: no anchor of its own, every category (Drinks, Prep,
+    -- Grill...) carries its own recipe list and world locations.
+    if mod.crafters ~= nil and type(mod.crafters) ~= 'table' then return false, 'crafter categories must be a list' end
+    out.crafters = {}
+    local seen = {}
+    for _, raw in ipairs(mod.crafters or {}) do
+        if type(raw) ~= 'table' then return false, 'a crafter category is malformed' end
+        local id, label = categoryIdentity(raw, seen)
+        if not id then return false, 'a crafter category needs a name' end
+        local recipes, recipeErr = recipeRefs(raw.recipes, S.MAX_CATEGORY_RECIPES)
+        if not recipes then return false, recipeErr end
+        local points, pointErr = locations(raw.locations)
+        if not points then return false, pointErr end
+        out.crafters[#out.crafters + 1] = { id = id, label = label, recipes = recipes, locations = points }
+        if #out.crafters > S.MAX_CATEGORIES then return false, 'too many crafter categories' end
+    end
     return true
+end
+
+local payFrom = { player = true, business = true }
+
+payloads.SalesItems = function(mod, out)
+    out.items = {}
+    local seen = {}
+    if mod.items ~= nil and type(mod.items) ~= 'table' then return false, 'sales items must be a list of item names' end
+    for _, entry in ipairs(mod.items or {}) do
+        local name = itemName(entry)
+        if not name then return false, 'a sales item name is malformed' end
+        if not seen[name] then
+            seen[name] = true
+            out.items[#out.items + 1] = name
+            if #out.items > S.MAX_SALES_ITEMS then return false, 'too many sales items' end
+        end
+    end
+    table.sort(out.items)
+
+    -- Employee pickup stores: priced ingredient lists with unlimited supply.
+    out.stores = {}
+    if mod.stores ~= nil and type(mod.stores) ~= 'table' then return false, 'stores must be a list' end
+    local ids = {}
+    for _, raw in ipairs(mod.stores or {}) do
+        if type(raw) ~= 'table' then return false, 'a store category is malformed' end
+        local id, label = categoryIdentity(raw, ids)
+        if not id then return false, 'a store category needs a name' end
+        local items, itemSeen = {}, {}
+        if raw.items ~= nil and type(raw.items) ~= 'table' then return false, 'store items must be a list' end
+        for _, entry in ipairs(raw.items or {}) do
+            local name = type(entry) == 'table' and itemName(entry.item or entry.name) or nil
+            if not name then return false, 'a store item needs an item name' end
+            local price = int(entry.price, 0, (Config and Config.pos and Config.pos.maxPrice) or 1000000)
+            if not price then return false, ('the price for %s is out of range'):format(name) end
+            if not itemSeen[name] then
+                itemSeen[name] = true
+                items[#items + 1] = { item = name, price = price }
+                if #items > S.MAX_STORE_ITEMS then return false, 'too many items in one store' end
+            end
+        end
+        local points, pointErr = locations(raw.locations)
+        if not points then return false, pointErr end
+        local source = (str(raw.payFrom, 16) or 'player'):lower()
+        if not payFrom[source] then return false, 'a store pays from the player or the business' end
+        out.stores[#out.stores + 1] = { id = id, label = label, items = items, locations = points, payFrom = source }
+        if #out.stores > S.MAX_CATEGORIES then return false, 'too many store categories' end
+    end
+    return true
+end
+
+---@param raw any
+---@return table[]|nil entries, string|nil err
+local function recipeEntries(raw, what)
+    local out = {}
+    if raw == nil then return out end
+    if type(raw) ~= 'table' then return nil, ('%s must be a list'):format(what) end
+    for _, entry in ipairs(raw) do
+        local name = type(entry) == 'table' and itemName(entry.item or entry.name) or nil
+        if not name then return nil, ('a recipe %s entry needs an item'):format(what) end
+        local amount = int(entry.amount or entry.count or 1, 1, 1000)
+        if not amount then return nil, ('the amount of %s must be between 1 and 1000'):format(name) end
+        out[#out + 1] = { item = name, amount = amount }
+        if #out > S.MAX_RECIPE_ENTRIES then return nil, ('too many recipe %s'):format(what) end
+    end
+    return out
+end
+
+---Business recipes are stored in SQL and edited in-game, so they get the same
+---treatment as a module: one validator, run before anything is written.
+---@param raw any
+---@return table|nil recipe, string|nil err
+function S.normaliseRecipe(raw)
+    if type(raw) ~= 'table' then return nil, 'a recipe must be a table' end
+    local label = str(raw.label, 64)
+    if not label then return nil, 'a recipe needs a name' end
+    local ingredients, ingredientErr = recipeEntries(raw.ingredients, 'ingredients')
+    if not ingredients then return nil, ingredientErr end
+    local give, giveErr = recipeEntries(raw.give, 'outputs')
+    if not give then return nil, giveErr end
+    if #give == 0 then return nil, 'a recipe needs at least one output' end
+
+    local recipe = {
+        label = label,
+        ingredients = ingredients,
+        give = give,
+        time = int(raw.time, 0, 600000) or 0,
+        progressLabel = str(raw.progressLabel, 64),
+        completeLabel = str(raw.completeLabel, 128),
+    }
+    if type(raw.anim) == 'table' then
+        local dict, clip = str(raw.anim.dict, 96), str(raw.anim.clip, 96)
+        if dict and clip then recipe.anim = { dict = dict, clip = clip, flag = int(raw.anim.flag, 0) or 1 } end
+    end
+    for _, field in ipairs({ 'levelRequired', 'xpGained' }) do
+        if type(raw[field]) == 'table' then
+            local list = {}
+            for _, entry in ipairs(raw[field]) do
+                local skill = type(entry) == 'table' and str(entry.skill, 32) or nil
+                local value = skill and int(field == 'levelRequired' and entry.level or entry.xp, 0, 100000) or nil
+                if skill and value then
+                    list[#list + 1] = field == 'levelRequired' and { skill = skill, level = value } or { skill = skill, xp = value }
+                end
+            end
+            if #list > 0 then recipe[field] = list end
+        end
+    end
+    return recipe
 end
 
 local useTypes = { reward = true, recipe = true }
@@ -356,7 +569,7 @@ function S.normaliseModule(raw)
         distance = num(raw.distance, 0.5, 20.0) or 2.0,
     }
 
-    local ok, err = normaliseAnchor(raw, out, descriptor.interaction)
+    local ok, err = normaliseAnchor(raw, out, descriptor.interaction, descriptor.optionalAnchor)
     if not ok then return nil, err end
 
     local blip = normaliseBlip(raw.blip)
@@ -389,8 +602,16 @@ function S.normaliseBusiness(raw)
 
     local business = { id = id, label = label, job = job:lower(), modules = {}, rejected = {} }
     if type(raw.modules) == 'table' then
+        local unique = {}
         for index, rawModule in ipairs(raw.modules) do
             local module, err = S.normaliseModule(rawModule)
+            if module and S.moduleType[module.moduleType].unique then
+                if unique[module.moduleType] then
+                    module, err = nil, ('a business may only have one %s module'):format(module.moduleType)
+                else
+                    unique[module.moduleType] = true
+                end
+            end
             if module then
                 business.modules[#business.modules + 1] = module
             else

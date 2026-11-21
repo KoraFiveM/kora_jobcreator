@@ -39,7 +39,7 @@ end
 local function paymentModule(business, moduleId)
     if not moduleId then return nil end
     for _, module in ipairs(business.modules or {}) do
-        if module.moduleType == 'POS' and module.id == moduleId and not module.isStore then return module end
+        if module.moduleType == 'POS' and module.id == moduleId then return module end
     end
 end
 
@@ -60,11 +60,6 @@ local function salesCatalog(business)
         if module.moduleType == 'SalesItems' then
             for _, name in ipairs(module.items or {}) do
                 if type(name) == 'string' then allowed[name:lower()] = true end
-            end
-            for _, category in pairs(module.stores or {}) do
-                for _, name in ipairs(category.items or {}) do
-                    if type(name) == 'string' then allowed[name:lower()] = true end
-                end
             end
             break
         end

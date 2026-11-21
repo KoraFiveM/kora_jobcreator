@@ -508,12 +508,15 @@ builders.POS = function(business, _, _, module)
 
     -- These actions gate themselves so a public closed shop does not expose
     -- staff controls to customers.
-    options[#options + 1] = {
-        label = 'Set prices',
-        icon = 'DollarSign',
-        canInteract = function() return Client.isBoss(business) end,
-        onSelect = function() KoraJobCreator.openPriceEditor(module.id) end,
-    }
+    -- Only a closed shop has a shelf to price.
+    if module.closedShop then
+        options[#options + 1] = {
+            label = 'Set prices',
+            icon = 'DollarSign',
+            canInteract = function() return Client.isBoss(business) end,
+            onSelect = function() KoraJobCreator.openPriceEditor(module.id) end,
+        }
+    end
 
     options[#options + 1] = {
         label = 'Take a payment',
@@ -584,7 +587,7 @@ openCraftingMenu = function(business, index, module, category)
         } } },
         onAction = function(actionId)
             local recipeId = actionId:match('^craft:(.+)$')
-            local recipe = recipeId and recipeMap[tostring(tonumber(recipeId) or recipeId)]
+            local recipe = recipeId and recipeMap[recipeId]
             if not recipe then return end
             if recipe.time and recipe.time > 0 then
                 local progress = {
@@ -603,7 +606,7 @@ openCraftingMenu = function(business, index, module, category)
                 local completed = Kora.progressbar.start(progress)
                 if not completed then return end
             end
-            local ok, message = Kora.callback.trigger('kora_jobcreator:server:craft', business.id, index, category.id, tonumber(recipeId) or recipeId)
+            local ok, message = Kora.callback.trigger('kora_jobcreator:server:craft', business.id, index, category.id, recipeId)
             Client.notify(message or (ok and 'Done.' or 'That did not work.'), ok and 'success' or 'error')
         end,
     })
@@ -611,17 +614,28 @@ openCraftingMenu = function(business, index, module, category)
 end
 
 builders.Crafting = function(business, scope, index, module)
-    for _, category in pairs(module.crafters or {}) do
-        for locationIndex in ipairs(category.locations or {}) do
-            Business.attachCraftingLocation(business, scope, index, module, category, locationIndex)
+    if module.crafters then
+        for _, category in ipairs(module.crafters) do
+            for locationIndex in ipairs(category.locations or {}) do
+                Business.attachCraftingLocation(business, scope, index, module, category, locationIndex)
+            end
         end
+        return nil
     end
+
+    -- A single anchored bench: one target on the module's own anchor, opening
+    -- its flat recipe list as the `default` category.
+    local category = { id = 'default', label = module.label, recipes = module.recipes }
+    return { {
+        label = module.label,
+        icon = module.icon or 'Hammer',
+        canInteract = function() return Client.job().name == business.job end,
+        onSelect = function() openCraftingMenu(business, index, module, category) end,
+    } }
 end
 
 builders.SalesItems = function(business, scope, _, module)
-    for _, category in pairs(module.stores or {}) do
-        category.id = category.id or S.slug(category.label)
-        category.label = category.label or category.id
+    for _, category in ipairs(module.stores or {}) do
         for locationIndex in ipairs(category.locations or {}) do
             Business.attachStoreLocation(business, scope, module, category, locationIndex)
         end

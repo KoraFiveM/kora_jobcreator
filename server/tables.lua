@@ -44,6 +44,18 @@ KoraJobCreatorTables = {
         },
     },
     {
+        -- In-game recipes, private to the business that created them.
+        name = 'kora_jobcreator_business_recipes',
+        collate = 'utf8mb4_unicode_ci',
+        columns = {
+            { name = 'business', type = 'varchar(64)' },
+            { name = 'id', type = 'varchar(64)' },
+            { name = 'data', type = 'longtext' },
+            { name = 'updated_at', type = 'timestamp', default = { raw = 'CURRENT_TIMESTAMP' }, on_update = 'CURRENT_TIMESTAMP' },
+        },
+        primary = { 'business', 'id' },
+    },
+    {
         name = 'kora_jobcreator_deleted',
         collate = 'utf8mb4_unicode_ci',
         columns = {

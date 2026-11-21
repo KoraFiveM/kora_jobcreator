@@ -32,6 +32,18 @@ Config.pos = {
     ---Hard cap on any price an employee may set, so a typo cannot create a
     ---multi-million dollar till entry.
     maxPrice = 1000000,
+    ---Fraction of every closed-shop sale that is withheld rather than credited
+    ---to the business. Closed shops pay no sales tax or sold-stock commission.
+    closedShopCut = 0.20,
+}
+
+---Employee pickup stores (business Stores page): priced ingredient lists with
+---unlimited supply.
+Config.stores = {
+    ---Account a store that is paid for by the employee charges. `cash` or `bank`.
+    account = 'bank',
+    ---Largest quantity one pickup may request.
+    maxQuantity = 100,
 }
 
 Config.stash = {

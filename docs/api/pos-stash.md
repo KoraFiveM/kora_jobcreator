@@ -38,7 +38,7 @@ Pass an options table as the final argument to a play function. Omit the table o
 
 ### `Kora.callback.trigger('kora_jobcreator:server:openShop', shopId)`
 
-Opens a till's customer-facing shop inventory. The access rule (job lock unless `public`, and `hideWhenStaffed`) is enforced by kora_inventory's own `access` callback supplied at registration, not re-checked here.
+Opens a closed shop's customer-facing shelf. Refused for a staffed till, and refused for non-employees while on-duty staff are in the business. kora_inventory's own `access` callback, supplied at registration, applies the same rules.
 
 **Parameters**
 

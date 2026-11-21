@@ -91,7 +91,7 @@ for _, seed in ipairs(Config.seeds) do
         for _, recipeId in ipairs(module.recipes or {}) do
             H.ok(Config.recipes[recipeId], ('seed %s references recipe %s'):format(business.id, recipeId))
         end
-        for _, listName in ipairs(module.items or {}) do
+        for _, listName in ipairs(module.moduleType == 'POS' and module.items or {}) do
             H.ok(Config.shopItems[listName], ('seed %s references shop list %s'):format(business.id, listName))
         end
     end

@@ -12,8 +12,8 @@ Current version: see `version` in `fxmanifest.lua`.
 ## Features
 
 - **Business console** - `/jobcreator` opens the management app. Admins see every business and can create, rename, reassign and delete them and edit modules; a boss sees only their own business (overview and activity). See [Commands](./commands.md).
-- **Eight module types** - Zone, Blip, StaticEntity, BossMenu, POS, Stash, Crafting, UseableItem. See [Modules](./modules.md).
-- **Tills** - customer shop plus an employee intake stash, fixed or employee-set prices, sales tax, sold-stock commission, optional panic button and a hide-when-staffed rule. Till stock itself is owned by `kora_inventory`.
+- **Nine module types** - Zone, Blip, StaticEntity, BossMenu, POS, Stash, Crafting, UseableItem and SalesItems. See [Modules](./modules.md).
+- **Tills and closed shops** - staffed tills take itemized payments; a closed shop is a customer shelf staff restock, open only while nobody is working, with fixed or employee-set prices. Shelf stock itself is owned by `kora_inventory`.
 - **Employee stores** - Appshell ingredient pickup lists with configurable prices and unlimited supply; no inventory shop or stock count is involved.
 - **Itemized payments** - employees build an Appshell sale from Sales Items and their inventory; the buyer reviews the invoice and chooses cash or card. See [Modules](./modules.md#card-machine).
 - **Business recipes and crafters** - create a crafter for a business, organize its recipes by category, and place multiple locations for each category. Recipes created in one business stay separate from other businesses. See [How to use](./how-to-use.md) and [Database](./database.md).

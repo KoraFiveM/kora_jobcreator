@@ -19,6 +19,17 @@ One row per business. Primary key `id`; index on `job`.
 | `modules` | `longtext` | JSON array of modules. |
 | `created_at`, `updated_at` | `timestamp` | Maintained by MySQL. |
 
+## `kora_jobcreator_business_recipes`
+
+Recipes created on a business's Recipes page. Primary key `business`, `id`. Rows are deleted with their business.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `business` | `varchar(64)` | Business id. |
+| `id` | `varchar(64)` | Recipe id, slugged from its first name and unique within the business. |
+| `data` | `longtext` | JSON recipe, validated by `S.normaliseRecipe` before every write and on load. |
+| `updated_at` | `timestamp` | Maintained by MySQL. |
+
 ## `kora_jobcreator_deleted`
 
 Deletion markers that stop a seed from reappearing. Primary key `id` (`varchar(64)`).

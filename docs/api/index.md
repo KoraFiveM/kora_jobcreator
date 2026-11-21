@@ -12,4 +12,5 @@ sidebar_position: 1
 | [Point of sale & stashes](./pos-stash.md) | `Kora.callback (server)` | server |
 | [Card payments](./card-payments.md) | `Kora.callback (server)` | client, server |
 | [Crafting](./crafting.md) | `Kora.callback (server)` | server |
+| [Recipes and stores](./job-recipes.md) | `Kora.callback (server)` | server |
 | [Cross-resource exports](./cross-resource-exports.md) | `exports.kora_jobcreator` | client, server |

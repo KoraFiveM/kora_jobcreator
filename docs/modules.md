@@ -14,7 +14,7 @@ Every module is plain JSON. All modules are validated by `shared/schema.lua` bef
 | `moduleType` | string | Required. One of the types below. |
 | `label` | string | Up to 64 characters. Defaults to the type's label (for a Blip, to its `name`). |
 | `icon` | string | Icon key for the target option, up to 48 characters. |
-| `public` | boolean | Removes the job lock from supported module target options and server checks, such as stash access. Crafting always requires the player's job to match the business. |
+| `public` | boolean | Removes the job lock from supported module target options and server checks, such as stash access. Crafting and employee stores always require the player's job to match the business. |
 | `distance` | number | Interaction distance, 0.5 to 20, default 2.0. |
 | `blip` | table | Optional. `enabled`, `category`, `name`, `sprite` (0-900), `color` (0-90), `scale` (0.1-3), `display` (0-11), `shortRange`, `coords`. `category` must be a category known to `Kora.blips.getCategoryIds()` and defaults to `Business`. Without `coords` the module's own anchor is used. A legacy `label` is accepted as `name`. `enabled = false` drops it. |
 
@@ -27,8 +27,9 @@ Each type accepts a zone anchor, an entity anchor, both or neither:
 | Zone | zone only |
 | Blip | none |
 | StaticEntity | entity only |
-| BossMenu, POS, Stash, Crafting | zone or entity |
-| UseableItem | none |
+| BossMenu, POS, Stash | zone or entity |
+| Crafting | zone or entity for a single bench; none for a crafter with categories (each category carries its own locations) |
+| UseableItem, SalesItems | none |
 
 **Zone** - `zoneType` is `sphere`, `box` or `poly`.
 
@@ -60,44 +61,62 @@ Adds a target option that calls `openBossMenu` on `kora_bossmenu`. Only shown to
 
 ### POS
 
-A point-of-sale fixture. A normal till handles employee itemized payments; set `closedShop = true` for a customer-facing inventory shop.
+A point-of-sale fixture. Create one from the **Tills** page (or Modules → Add module) and change its settings there later without moving it.
 
-The business-wide **Sales Items** page is independent of tills. It stores shared item names that the business offers, and every till accepts those items automatically. Items can be selected before any till exists. Store categories are employee-only Appshell pickup lists with configured prices and unlimited supply; they do not use a kora_inventory shop or finite stock.
-
-The **Stores** page organizes shared ingredients into named store categories. Create a category, open it, add items from the shared catalog with a price, then use **Place store** to add one or more employee pickup locations. Staff open an Appshell catalog, enter a quantity, and receive the ingredient; supply is unlimited and no `kora_inventory` shop is used. Removing an item from the business-wide Sales Items page removes it from all store categories too.
+- A **staffed till** (the default) is where employees take itemized payments: "Take a payment" opens the Appshell sale builder over the business's Sales Items. See [Card machine](#card-machine).
+- A **closed shop** (`closedShop = true`) is a customer shelf. Staff restock it; customers may browse only while no on-duty employee is in the business. It requires a business Zone.
 
 | Field | Notes |
 | --- | --- |
 | `id` | Required. Shop id, slugged. Two modules in the same business may share an id (a row of registers); the first registration owns the policy. An id already used by another business is refused with a console warning. |
-| `closedShop` | `true` for a Closed Shop. Requires a business Zone. Closed shops use the customer inventory-shop flow; normal tills do not show checkout or restock targets. |
-| `items` / `saleItems` | Ignored for tills. The business-wide **Sales Items** page controls what may be stocked. |
-| `commission` | 0 to 100 (percent). Default 0. |
-| `tax` | 0 to 100 (percent). Default 0. |
-| `hideWhenStaffed` | Always enabled; till access is employee-only. |
-| `panicButton` | Always enabled. |
-| `currency` | `cash` or `bank`, default `Config.pos.currency`. |
+| `closedShop` | `true` for a closed shop. Saving one in a business without a Zone is refused. Default `false`. |
+| `items` | Closed shops only. Names of `Config.shopItems` lists. When the business has a non-empty Sales Items list, that list decides what is accepted and these lists only fix prices; otherwise these lists restrict what may be stocked and fix prices. Omit to let staff set every price. |
+| `panicButton` | Adds a "Panic button" option for on-duty employees. |
+| `currency` | `cash` or `bank`, default `Config.pos.currency`. The account closed-shop customers pay from. |
 | `shopSlots`, `stockSlots` | 1 to 500, default from `Config.pos`. |
-| `webhook` | Not configurable on tills. |
+| `webhook` | Discord URL for this till's log entries, in addition to the job and default webhooks. Never sent to clients. |
+| `commission`, `tax`, `hideWhenStaffed` | Still validated (percentages outside 0 to 100 are rejected) but no longer used: staffed tills have no shelf, and closed shops always apply the staffing rule and `Config.pos.closedShopCut`. |
 
-A percentage outside 0 to 100 is rejected (the module is not saved), not clamped.
+Target options:
 
-Normal till target options: "Take a payment" (employees; works without the card machine item), "Set prices" (boss), and "Panic button" (employees, always enabled). Till targets do not show checkout or restock.
+| Option | Staffed till | Closed shop | Who |
+| --- | --- | --- | --- |
+| Take a payment | yes | yes | Employees (no card machine item needed) |
+| Panic button | if `panicButton` | if `panicButton` | Employees |
+| Browse shop | no | yes | Anyone while no staff are in; staff always |
+| Restock | no | yes | Employees |
+| Set prices | no | yes | Boss, near the till |
 
-Closed Shops are managed on the **Closed Shops** page. Employees restock them from the business Sales Items and customers may browse only while no on-duty employees are in the business zone. Closed Shops have no sales tax or sold-stock commission; 20% of each sale's proceeds is withheld and not paid to an account. The shop's remaining 80% is credited to the business.
-
-For Closed Shop restocking, an employee drops goods into the intake stash (`<id>_stock`) and closes it. Only items on the business Sales Items page move onto the shelf. Items not selected stay in the stash. A price is requested once per item type when there is no remembered price (up to `Config.pos.maxPrice`); a boss can later change shelf prices with "Set prices". On a committed purchase from a Closed Shop, the business gets 80% of the sale total.
-
-"Take a payment" opens the itemized Appshell sale builder. Employees select from Sales Items, see their carried quantities, enter quantities and unit prices, and choose a buyer from the player list. The buyer reviews the invoice and chooses cash or card. The server verifies the selected items and removes them from the employee only when the buyer approves and pays. Till sales require the employee to be at that till; portable card machine sales require the item. See [Card machine](#card-machine).
+Closed-shop restocking: an employee drops goods into the intake stash (`<id>_stock`) and closes it. Accepted items move onto the shelf; the rest stay in the stash. A price is requested once per item type when there is no fixed or remembered price (up to `Config.pos.maxPrice`); a boss can later change non-fixed prices with "Set prices". On a committed purchase, `Config.pos.closedShopCut` (default 20%) is withheld and the remainder is credited to the business account. There is no sales tax and no sold-stock commission.
 
 Intake and the stock stash are job-locked regardless of `public`. Till and stash inventories are registered with `kora_inventory` using the module's coordinates and an interaction radius that covers the zone shape plus `distance`.
 
 ### Stash
 
-Admins manage stashes from the **Stashes** page. Each stash has its own unique id, label, slot count (1-500), and max weight (1000-100000000 grams); values default from `Config.stash`. For a box, raycast its center and enter the X/Y/Z size; for a prop, enter its model and raycast to it. Creating a stash adds a separately registered inventory, and edits to its label, slots, or weight preserve its saved contents. Job-locked unless `public`. A stash id already used by another business is refused with a console warning. Contents are stored by `kora_inventory`.
+`id` (required, slugged), `slots` (1-500, default `Config.stash.slots`), `weight` (1000 to 100000000 grams, default `Config.stash.weight`). Create one from the **Stashes** page (or Modules → Add module); its label, slots, weight and access can be changed there later and its contents are kept. Use Modules → Rebuild to move it. Job-locked unless `public`. A stash id already used by another business is refused with a console warning. Contents are stored by `kora_inventory`.
 
 ### Crafting
 
-Create and manage crafting modules from the business's **Crafters** page. Create categories such as Beer, Mixed Drinks, Prep, Salads, or Entrees; open a category to view the business's full recipe list, search by recipe or shared item name, and add or remove recipes. Then add one or more world locations to each category. When placing a location, optionally enter a prop model to raycast against that object; leave it blank for the normal raycast. The coordinates and optional model name are saved on the category location. Each location opens its category's compact recipe menu on the right side of the screen, with the output item's inventory image when available. The server checks the selected category, recipe, job access, and proximity before crafting.
+Two shapes, both managed from the **Crafters** page:
+
+- **Crafter with categories** (no anchor). `crafters` is a list of up to 32 categories, each `{ id, label, recipes, locations }`. `id` is derived from the label and kept when the label changes. `recipes` is a list of up to 100 recipe ids. `locations` is a list of up to 16 points `{ x, y, z, w, model? }`; `model` is set when the admin required aiming at a specific prop while placing it. Each location becomes a target that opens that category's recipe menu on the right of the screen, with the output item's image. A new crafter may have no categories yet.
+- **Single bench** (zone or entity anchor, made with Modules → Add module). `recipes` is a non-empty list of recipe ids, all offered at the bench's anchor.
+
+Recipe ids resolve to the business's own recipes (Recipes page) first, then `Config.recipes`. The menu shows ingredient counts and disables recipes the player cannot make; a progress bar runs if the recipe has a `time`. The server then checks that the player works the job (`public` does not apply), that the recipe belongs to the chosen category, that the player is near one of its locations, skill requirements (when enabled), ingredients and room. See [Crafting](./api/crafting.md).
+
+### SalesItems
+
+One per business, built from the **Sales Items** and **Stores** pages and hidden from Modules → Add module. A second one is refused.
+
+| Field | Notes |
+| --- | --- |
+| `items` | Up to 200 item names staff may sell through itemized payments. Also what a closed shop accepts when non-empty. |
+| `stores` | Up to 32 employee stores, each `{ id, label, payFrom, items, locations }`. |
+| `stores[].payFrom` | `player` (default; charged from `Config.stores.account`) or `business` (debited from the business account through `kora_bossmenu`). |
+| `stores[].items` | Up to 100 `{ item, price }` entries; `price` is 0 to `Config.pos.maxPrice`. |
+| `stores[].locations` | Up to 16 points, placed like crafter locations. |
+
+A store location shows "Browse (store)" to employees. The Appshell catalog lists its items and prices; the employee enters a quantity (up to `Config.stores.maxQuantity`) and receives the items. Supply is unlimited and no `kora_inventory` shop or stock count is used. The server checks job, proximity to one of the store's locations, the saved price and carrying capacity, and logs the pickup as `stock`. See [Recipes and stores](./api/job-recipes.md).
 
 ### UseableItem
 
@@ -110,7 +129,7 @@ Binds an item to a use handler. No anchor.
 | `useType` | `reward` (default) or `recipe`. |
 | `rewards` | For `reward`: non-empty list of `item` (or `name`), `amount` (1-1000, default 1), `chance` (relative weight, default 1). |
 | `rolls` | For `reward`: picks per use, 1 to 20, default 1. Uses `Kora.rewards.generate` in weighted mode. |
-| `recipe` | For `recipe`: id from the business's Recipes page or `Config.recipes`. |
+| `recipe` | For `recipe`: id from the business's Recipes page or `Config.recipes`. The pickers list both. |
 
 Anyone with the item can use it; there is no job check.
 

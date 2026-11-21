@@ -140,14 +140,6 @@ local function catalogRows(business, cart)
                     salesItems[#salesItems + 1] = name
                 end
             end
-            for _, category in pairs(module.stores or {}) do
-                for _, name in ipairs(category.items or {}) do
-                    if type(name) == 'string' and not seen[name] then
-                        seen[name] = true
-                        salesItems[#salesItems + 1] = name
-                    end
-                end
-            end
             break
         end
     end

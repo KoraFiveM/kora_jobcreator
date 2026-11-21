@@ -77,10 +77,11 @@ local function driverEnsureTables(_, specs, resource, callback)
     eq(specs, KoraJobCreatorTables, 'actual main ensures the declared schema')
     local names = {}
     for _, spec in ipairs(specs) do names[spec.name] = true end
-    for _, name in ipairs({ 'kora_jobcreator', 'kora_jobcreator_prices', 'kora_jobcreator_logs', 'kora_jobcreator_deleted' }) do
+    for _, name in ipairs({ 'kora_jobcreator', 'kora_jobcreator_prices', 'kora_jobcreator_logs',
+        'kora_jobcreator_business_recipes', 'kora_jobcreator_deleted' }) do
         eq(names[name], true, 'schema declares ' .. name)
     end
-    eq(#specs, 4, 'schema declares exactly the four tables')
+    eq(#specs, 5, 'schema declares exactly the five tables')
     callback({})
 end
 local function driverTransaction(_, queries, ...)
@@ -149,6 +150,8 @@ local function boot()
     KoraJobCreator.pos = { register = function() end, resetBusiness = function() end,
         loadPrices = function() startupOrder[#startupOrder + 1] = 'prices' end }
     KoraJobCreator.crafting = { registerUseable = function() end }
+    KoraJobCreator.recipes = { load = function() startupOrder[#startupOrder + 1] = 'recipes'; return true end,
+        removeBusiness = function() end }
     KoraJobCreator.staff = { counts = function() return {} end }
     KoraJobCreator.logs = { record = function(business, entry)
         logs[#logs + 1] = { id = business.id, entry = clone(entry) }
@@ -165,12 +168,13 @@ local function boot()
     eq(State.ready, true, 'actual main marks ready after successful schema ensure and load')
     eq(startupOrder[1], 'migrate', 'schema ensure occurs before persisted data reads')
     eq(startupOrder[2], 'prices', 'existing price load order preserved')
-    eq(startupOrder[3], 'business_query', 'actual state loads after schema completion')
+    eq(startupOrder[3], 'recipes', 'business recipes load before businesses go live')
+    eq(startupOrder[4], 'business_query', 'actual state loads after schema completion')
     return State
 end
 local State = boot()
 eq(State.get('burgershot').label, 'Burger Shot', 'fresh installation seeds demo')
-eq(#State.get('burgershot').modules, 6, 'shipped modules pass actual validator')
+eq(#State.get('burgershot').modules, 7, 'shipped modules pass actual validator')
 eq(rows.burgershot.label, 'Burger Shot', 'seed is durably represented by inert row')
 eq(type(jobs.burgershot), 'table', 'seed job registered on first boot')
 local deleted = callbacks['kora_jobcreator:server:deleteBusiness']

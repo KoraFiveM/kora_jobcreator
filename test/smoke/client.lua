@@ -32,8 +32,11 @@ H.ok(enter:find('business.generation ~= generation', 1, true),
 local attach = business:match('function Business%.attach%(business.-\nend\n')
 H.ok(attach and attach:find('option.onSelect = runSelection', 1, true),
     'every target option is wrapped before registration')
-H.ok(attach and attach:find('option.action = runSelection', 1, true),
-    'kora_lib interactions receive the same wrapped selection action')
+for _, name in ipairs({ 'attachCraftingLocation', 'attachStoreLocation' }) do
+    local body = business:match('function Business%.' .. name .. '%(.-\nend\n')
+    H.ok(body and body:find('CreateThread(function()', 1, true),
+        name .. ' hands yielding selections to their own thread')
+end
 H.ok(attach and attach:find('CreateThread(function() select_', 1, true),
     'onSelect never yields on kora_target\'s own tick thread')
 
@@ -59,13 +62,13 @@ for _, kind in ipairs({ 'zones', 'blips', 'targets', 'entities' }) do
 end
 H.ok(clear:find('pcall(zone.remove)', 1, true),
     'a zone handle exposes a plain remove function, not a method')
-H.ok(business:find('Kora.interact.addEntity', 1, true)
-    and business:find('Kora.interact.addCircleZone', 1, true)
-    and business:find('Kora.interact.addBoxZone', 1, true),
-    'entity, sphere and box interactions use kora_lib')
-H.ok(business:find("module.zoneType == 'poly'", 1, true)
+H.ok(business:find('target:addEntity', 1, true)
+    and business:find('target:addSphereZone', 1, true)
+    and business:find('target:addBoxZone', 1, true)
     and business:find('target:addPolyZone', 1, true),
-    'kora_target is retained only for polygon interactions unsupported by Kora.interact')
+    'entity, sphere, box and poly interactions are registered through kora_target')
+H.ok(clear:find('target:removeEntity', 1, true) and clear:find('target:removeZone', 1, true),
+    'every kora_target registration kind is released on teardown')
 -- Entities must go last: a target registration still points at them.
 H.ok(clear:find('scope.targets', 1, true) < clear:find('for _, entity in ipairs(scope.entities)', 1, true),
     'targets are removed before the entities they point at')
@@ -99,7 +102,7 @@ H.ok(creator:find("Kora.callback.trigger('kora_jobcreator:server:removeModule'",
     and creator:find("Kora.callback.trigger('kora_jobcreator:server:deleteBusiness'", 1, true),
     'AppShell actions still submit intent through the authoritative server callbacks')
 
-local crafting = creator:match('fieldsFor%.Crafting = function%(%).-\nend')
+local crafting = creator:match('fieldsFor%.Crafting = function%(business%).-\nend')
 H.ok(crafting and crafting:find("type = 'multiselect'", 1, true),
     'crafting benches choose recipes with the shared multiselect field')
 H.ok(crafting and crafting:find('recipes = values.recipes', 1, true),

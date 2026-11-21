@@ -23,6 +23,11 @@ CreateThread(function()
 
     Pos.loadPrices()
 
+    -- Recipes load before businesses so a crafter is never live without the
+    -- recipes its categories reference.
+    local recipesOk, recipesErr = KoraJobCreator.recipes.load()
+    if not recipesOk then Kora.logging.error('recipes.load_failed', 'Could not load business recipes', { error = tostring(recipesErr) }) end
+
     local ok, loadErr = State.load()
     if not ok then Kora.logging.error('businesses.load_failed', 'Could not load businesses', { error = tostring(loadErr) }) return end
 

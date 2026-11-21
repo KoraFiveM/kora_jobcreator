@@ -11,6 +11,7 @@ local S = KoraJobCreator.schema
 local State = KoraJobCreator.state
 local Logs = KoraJobCreator.logs
 local Staff = KoraJobCreator.staff
+local Recipes = KoraJobCreator.recipes
 
 ---@class KoraBossMenuBalanceExports
 ---@field getBusinessBalance fun(self: KoraBossMenuBalanceExports, jobName: string): number?, string?
@@ -104,6 +105,7 @@ Kora.callback.register('kora_jobcreator:server:deleteBusiness', function(src, bu
 
     local ok, removeErr = State.remove(business.id)
     if not ok then return false, removeErr end
+    Recipes.removeBusiness(business.id)
 
     -- Logged against the business that no longer exists on purpose: the row
     -- survives it, and "who deleted this" is exactly what you want afterwards.
@@ -130,8 +132,24 @@ Kora.callback.register('kora_jobcreator:server:saveModule', function(src, busine
 
     local modules = copyModules(business)
     local position = tonumber(index)
+    if position then position = math.floor(position) end
+
+    -- Business-wide modules (Sales Items) exist once; a second one would be
+    -- dropped by the validator, so refuse it here and say why.
+    if S.moduleType[module.moduleType].unique then
+        for existingIndex, existing in ipairs(modules) do
+            if existing.moduleType == module.moduleType and existingIndex ~= position then
+                return false, 'This business already has that module.'
+            end
+        end
+    end
+    -- A closed shop decides who may browse by counting staff in the business
+    -- zone. Without a perimeter there is nothing to count.
+    if module.moduleType == 'POS' and module.closedShop and not S.hasPerimeter(business) then
+        return false, 'A closed shop needs a business Zone first.'
+    end
+
     if position then
-        position = math.floor(position)
         if not modules[position] then return false, 'That module no longer exists.' end
         modules[position] = module
     else

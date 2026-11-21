@@ -21,6 +21,8 @@ local crafting = read('server/crafting.lua')
 local payment = read('server/payment.lua')
 local staff = read('server/staff.lua')
 local register = read('server/register.lua')
+local recipes = read('server/recipes.lua')
+local stores = read('server/stores.lua')
 local schema = read('shared/schema.lua')
 local manifest = read('fxmanifest.lua')
 
@@ -53,7 +55,7 @@ H.ok(staff:find('if prune() then publish() end', 1, true), 'stale presence is pe
 --
 -- Every client-callable entry point runs a database read, a dialog or a money
 -- move. An unlimited one is a free denial-of-service against the server.
-for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
+for _, source in ipairs({ admin, pos, crafting, payment, staff, register, recipes, stores }) do
     local registrations, limited = 0, 0
     for chunk in source:gmatch("Kora%.callback%.register%('kora_jobcreator:server:.-\nend[^\n]*") do
         registrations = registrations + 1
@@ -69,23 +71,27 @@ for _, source in ipairs({ admin, pos, crafting, payment, staff, register }) do
     H.equal(limited, registrations, 'every server callback carries a rate limit')
 end
 
-H.ok(crafting:find('Config.recipes[id]', 1, true), 'a recipe is resolved from shared config')
+H.ok(recipes:find('Config.recipes[id]', 1, true), 'a recipe falls back to the shared config library')
+H.ok(recipes:find('S.normaliseRecipe(raw)', 1, true), 'business recipes are validated by the schema before they are written')
 H.ok(crafting:find("if id == recipeId then offered = true", 1, true),
-    'a recipe must be offered by the bench being used, not merely exist')
-H.ok(crafting:find('Kora.distance.player(src, anchor', 1, true), 'crafting revalidates the distance server-side')
+    'a recipe must be offered by the category being used, not merely exist')
+H.ok(crafting:find('State.nearModule(src, boundary)', 1, true), 'crafting revalidates the distance server-side')
+H.ok(crafting:find('State.worksFor(src, business.job)', 1, true), 'crafting always requires the business job')
+H.ok(stores:find('State.nearModule(src,', 1, true), 'store pickups revalidate the distance server-side')
+H.ok(stores:find('entry.price * amount', 1, true), 'store prices come from the saved definition, never the client')
 H.nope(crafting:find('function(src, recipe)\n', 1, true), 'no callback accepts a client-supplied recipe table')
 
 H.ok(pos:find('Pos.accepts(shopId', 1, true), 'the till decides what it stocks')
 H.ok(pos:find('Config.pos.maxPrice', 1, true), 'prices are capped')
 
-H.ok(payment:find('nearEachOther(src, target)', 1, true), 'a card payment is distance-checked')
-H.equal(select(2, payment:gsub('if not nearEachOther', '')), 2,
-    'the distance is re-checked after the dialogs, not only before them')
-H.ok(payment:find('kora_jobcreator-card-refund', 1, true),
+H.ok(payment:find('Kora.world.resolveNearbyPlayer(src, target', 1, true), 'an item sale is distance-checked')
+H.equal(select(2, payment:gsub('Kora%.world%.resolveNearbyPlayer%(src, target', '')), 2,
+    'the distance is re-checked after the customer answers, not only before')
+H.ok(payment:find('refundBuyer(target, account, total)', 1, true),
     'a failed business credit refunds the customer rather than stranding the money')
-H.ok(payment:find('approved ~= true', 1, true),
+H.ok(payment:find("account ~= 'cash' and account ~= 'bank'", 1, true),
     'a timed-out approval is treated as no consent, not as consent')
-
+H.ok(pos:find('if not record.module.closedShop then', 1, true), 'only a closed shop opens a customer shelf')
 H.ok(pos:find("action ~= 'purchase'", 1, true), 'sales are credited from the committed purchase audit')
 H.nope(pos:find("RegisterHook('buyItem'", 1, true),
     'sales are NOT credited from a pre-commit buyItem hook')
