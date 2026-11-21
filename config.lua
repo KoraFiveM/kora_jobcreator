@@ -42,13 +42,11 @@ Config.stash = {
 ---Portable card machine: an item that lets an employee bill a nearby player.
 Config.payment = {
     item = 'cardmachine',
-    ---Fraction of every manual payment paid to the employee who took it.
+    ---Fraction of each item sale paid to the employee who took it.
     commission = 0.10,
     ---Both players must be within this many metres of each other.
     distance = 5.0,
     maxAmount = 1000000,
-    ---Account the customer is billed from.
-    account = 'bank',
 }
 
 ---Panic button on a POS module.

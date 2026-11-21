@@ -20,7 +20,7 @@ Callbacks use `Kora.callback`. Every server callback has a rate limit, shown as 
 | Event | Where | Use |
 | --- | --- | --- |
 | `QBCore:Server:PlayerLoaded` | server | Sends the current snapshot to that player. |
-| `QBCore:Server:OnPlayerUnload`, `playerDropped` | server | Clears presence (and a pending card payment on drop). |
+| `QBCore:Server:OnPlayerUnload`, `playerDropped` | server | Clears presence and pending payment state on drop. |
 | `QBCore:Server:OnJobUpdate`, `QBCore:Server:SetDuty` | server | Re-validates presence; going off duty clears it. |
 | `QBCore:Client:OnJobUpdate` | client | Re-sends enter or leave for businesses the player is inside, and refreshes the console. |
 | `kora_inventory:server:sessionClosed` | server | Closing a till's intake stash triggers restocking. |
@@ -41,6 +41,10 @@ The resource also registers a `swapItems` hook on `kora_inventory` that blocks d
 | `kora_jobcreator:server:module` | businessId, index | 10 per 10000 | Admin: one module for editing. |
 | `kora_jobcreator:server:saveModule` | businessId, index or nil, payload | 20 per 30000 | Admin: add or replace a module. |
 | `kora_jobcreator:server:removeModule` | businessId, index | 20 per 30000 | Admin: remove a module. |
+| `kora_jobcreator:server:recipes` | businessId | 10 per 10000 | Admin: list recipes saved for that business. |
+| `kora_jobcreator:server:saveRecipe` | businessId, id, recipe | 20 per 30000 | Admin: create or update a business recipe. |
+| `kora_jobcreator:server:deleteRecipe` | businessId, id | 10 per 30000 | Admin: delete a recipe unused by that business. |
+| `kora_jobcreator:server:benchRecipes` | businessId, moduleIndex, categoryId | 20 per 10000 | Return recipes assigned to that category for an authorized player. |
 | `kora_jobcreator:server:logs` | businessId, limit | 10 per 10000 | Admin or boss: recent log rows (1 to 100, default 25). |
 | `kora_jobcreator:server:balance` | businessId | 10 per 10000 | Admin or boss: balance from `kora_bossmenu`. |
 | `kora_jobcreator:server:enter`, `kora_jobcreator:server:leave` | businessId | 20 per 10000 | Staff presence. |
@@ -48,11 +52,13 @@ The resource also registers a `swapItems` hook on `kora_inventory` that blocks d
 | `kora_jobcreator:server:openStash` | stashId | 10 per 10000 | Open a stash. |
 | `kora_jobcreator:server:openShop` | shopId | 10 per 10000 | Open a till as a customer. |
 | `kora_jobcreator:server:openStock` | shopId | 10 per 10000 | Open the intake stash. |
+| `kora_jobcreator:server:storeCatalog` | businessId, categoryId | 10 per 10000 | Return a store category's pickup list to an employee near one of its locations. |
+| `kora_jobcreator:server:purchaseStoreItem` | businessId, categoryId, itemName, amount | 10 per 10000 | Employee pickup with server checks for job, location, funds and capacity; store supply is unlimited. |
 | `kora_jobcreator:server:tillPrices` | shopId | 10 per 10000 | Boss: shelf price list. |
 | `kora_jobcreator:server:setTillPrice` | shopId, slot, price | 20 per 10000 | Boss: reprice a non-fixed item. |
 | `kora_jobcreator:server:panic` | businessId, shopId | 3 per 30000 | Send a dispatch call. |
-| `kora_jobcreator:server:craft` | businessId, moduleIndex, recipeId | 20 per 10000 | Craft a recipe. |
-| `kora_jobcreator:server:requestPayment` | target server id | 5 per 15000 | Card machine billing. |
+| `kora_jobcreator:server:craft` | businessId, moduleIndex, categoryId, recipeId | 20 per 10000 | Craft a recipe assigned to that category and verify proximity to one of its locations. |
+| `kora_jobcreator:server:requestPayment` | target, business id, optional till id, itemized sale | 5 per 15000 | Verify Sales Items and seller inventory, then request buyer approval and payment choice. |
 
 ## Client callbacks
 
@@ -61,5 +67,4 @@ Asked by the server during a flow.
 | Callback | Purpose |
 | --- | --- |
 | `kora_jobcreator:client:setPrice` | Price prompt during restocking. |
-| `kora_jobcreator:client:billAmount` | Amount prompt for the employee. |
-| `kora_jobcreator:client:approveBill` | Approval dialog for the customer. |
+| `kora_jobcreator:client:approveSale` | Itemized Appshell invoice; buyer chooses cash, card, or decline. |
