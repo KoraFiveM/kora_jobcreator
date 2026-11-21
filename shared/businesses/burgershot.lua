@@ -89,6 +89,13 @@ Config.seeds[#Config.seeds + 1] = {
             rotation = 34.0,
         },
         {
+            -- What staff may sell through "Take a payment" at the till, and
+            -- what a closed shop would accept when restocked.
+            moduleType = 'SalesItems',
+            label = 'Sales items',
+            items = { 'burger', 'fries', 'water_bottle', 'sprunk' },
+        },
+        {
             moduleType = 'BossMenu',
             label = 'Manager Desk',
             zoneType = 'sphere',

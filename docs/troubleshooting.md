@@ -31,6 +31,6 @@ sidebar_position: 13
 
 ## Behaviours worth knowing
 
-- Server-side, the card machine callback does not check that the employee holds the item, is on duty or is near a till; it only needs a job matching a business. If several businesses share a job, which one is credited depends on table iteration order.
+- Item sales require the seller's current job to match the selected business. The seller must still carry the selected quantities after buyer approval; different buyers must remain within `Config.payment.distance`. Till sales also require proximity to that till. The portable player target additionally requires `Config.payment.item` in the seller's inventory.
 - The Burger Shot seed's comments refer to a `/business` command; the actual command is `/jobcreator` (`Config.command`).
 - Only `Config.webhooks.default` is registered with `Kora.config`; the per-job webhook key is read by the code, but whether it survives config adoption is not confirmed from this repository.

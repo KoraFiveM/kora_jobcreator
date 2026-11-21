@@ -18,9 +18,9 @@ local Client = KoraJobCreator.client
 
 local Business = {}
 KoraJobCreator.Business = Business
+local openCraftingMenu
 
--- kora_lib owns normal entity and zone interactions. kora_target remains a narrow
--- fallback for polygon interaction zones, which Kora.interact does not expose.
+-- All player-facing interactions are registered through kora_target.
 local target = exports.kora_target
 
 ---@class KoraBossMenuClientExports
@@ -35,10 +35,8 @@ local function clearScope(scope)
     for _, zone in ipairs(scope.zones) do pcall(zone.remove) end
     for _, blip in ipairs(scope.blips) do Kora.blips.remove(blip) end
     for _, registration in ipairs(scope.targets) do
-        if registration.kind == 'interact-zone' then
-            Kora.interact.removeZone(registration.name)
-        elseif registration.kind == 'entity' then
-            Kora.interact.removeEntity(registration.entity, registration.id)
+        if registration.kind == 'entity' then
+            target:removeEntity(registration.entity, registration.id)
         else
             target:removeZone(registration.id)
         end
@@ -65,6 +63,16 @@ end
 local function itemLabel(name)
     local definition = Kora.shared.get('items', name)
     return (definition and definition.label) or name
+end
+
+---@param name string
+---@return string|nil
+local function itemImage(name)
+    local definition = Kora.shared.get('items', name)
+    local image = definition and definition.image
+    if type(image) ~= 'string' or image == '' then return nil end
+    if image:match('^https?://') or image:match('^nui://') then return image end
+    return ('nui://kora_inventory/images/%s'):format(image)
 end
 
 ---@param definition table
@@ -210,9 +218,7 @@ function Business.attach(business, scope, index, module, entities, options)
             local args = table.pack(...)
             CreateThread(function() select_(table.unpack(args, 1, args.n)) end)
         end
-        -- Kora.interact dispatches `action`; kora_target's polygon fallback invokes
-        -- `onSelect`. Keep both pointed at the same yield-safe wrapper.
-        option.action = runSelection
+        -- Target selections may yield, so hand the work to its own thread.
         option.onSelect = runSelection
 
         local base, ignoreLock = option.canInteract, option.ignoreJobLock
@@ -228,24 +234,26 @@ function Business.attach(business, scope, index, module, entities, options)
 
     if #entities > 0 then
         for _, entity in ipairs(entities) do
-            scope.targets[#scope.targets + 1] = {
-                kind = 'entity', entity = entity, id = Kora.interact.addEntity(entity, options, module.distance),
-            }
+            local id = target:addEntity(entity, options)
+            if id then scope.targets[#scope.targets + 1] = { kind = 'entity', entity = entity, id = id } end
         end
         return
     end
 
     local id
-    local name = ('kora_jobcreator:%s:%d'):format(business.id, index)
     if module.zoneType == 'sphere' then
-        id = Kora.interact.addCircleZone(name, Client.vec3(module.coords), module.radius, {
+        id = target:addSphereZone({
+            coords = Client.vec3(module.coords), radius = module.radius,
             options = options,
-        }, Client.debug)
+            distance = module.distance, debug = Client.debug,
+        })
     elseif module.zoneType == 'box' then
-        id = Kora.interact.addBoxZone(name, Client.vec3(module.coords),
-            vector4(module.size.x, module.size.y, module.size.z, module.rotation), {
-                options = options,
-            }, Client.debug)
+        id = target:addBoxZone({
+            coords = Client.vec3(module.coords),
+            size = vector3(module.size.x, module.size.y, module.size.z),
+            rotation = module.rotation, options = options,
+            distance = module.distance, debug = Client.debug,
+        })
     elseif module.zoneType == 'poly' then
         local points = {}
         for _, point in ipairs(module.points) do points[#points + 1] = Client.vec3(point) end
@@ -255,10 +263,132 @@ function Business.attach(business, scope, index, module, entities, options)
         })
     end
     if id then
-        scope.targets[#scope.targets + 1] = module.zoneType == 'poly'
-            and { kind = 'poly-zone', id = id }
-            or { kind = 'interact-zone', name = name }
+        scope.targets[#scope.targets + 1] = { kind = 'zone', id = id }
     end
+end
+
+---Adds a target circle for category-owned crafting coordinates.
+---@param business table
+---@param scope table
+---@param index integer
+---@param module table
+---@param category table
+---@param locationIndex integer
+function Business.attachCraftingLocation(business, scope, index, module, category, locationIndex)
+    local location = category.locations[locationIndex]
+    local coords = location and (location.coords or location)
+    if not coords then return end
+    local options = { {
+        label = category.label,
+        icon = 'Hammer',
+        distance = module.distance,
+        onSelect = function() openCraftingMenu(business, index, module, category) end,
+    } }
+
+    for _, option in ipairs(options) do
+        local select_ = option.onSelect
+        option.onSelect = function(...)
+            local args = table.pack(...)
+            CreateThread(function() select_(table.unpack(args, 1, args.n)) end)
+        end
+        option.canInteract = function() return Client.job().name == business.job end
+    end
+
+    local id = target:addSphereZone({
+        coords = Client.vec3(coords), radius = module.distance, options = options,
+        distance = module.distance, debug = Client.debug,
+    })
+    if id then scope.targets[#scope.targets + 1] = { kind = 'zone', id = id } end
+end
+
+---@param business table
+---@param scope table
+---@param module table
+---@param category table
+---@param locationIndex integer
+function Business.attachStoreLocation(business, scope, module, category, locationIndex)
+    local location = category.locations[locationIndex]
+    local coords = location and (location.coords or location)
+    if not coords then return end
+
+    local function runInThread(callback)
+        return function(...)
+            local args = table.pack(...)
+            CreateThread(function() callback(table.unpack(args, 1, args.n)) end)
+        end
+    end
+    local options = { {
+        label = ('Browse %s'):format(category.label),
+        icon = 'ShoppingCart',
+        canInteract = function() return Client.job().name == business.job end,
+        onSelect = runInThread(function()
+            local catalog, err = Kora.callback.trigger('kora_jobcreator:server:storeCatalog', business.id, category.id)
+            if type(catalog) ~= 'table' then return Client.notify(err or 'This store is unavailable.', 'error') end
+            Business.openStoreApp(business, category, catalog)
+        end),
+    } }
+    local distance = module.distance or 2.0
+    local id = target:addSphereZone({
+        coords = Client.vec3(coords), radius = distance, options = options,
+        distance = distance, debug = Client.debug,
+    })
+    if id then scope.targets[#scope.targets + 1] = { kind = 'zone', id = id } end
+end
+
+function Business.openStoreApp(business, category, catalog)
+    local appId = ('kora_jobcreator:store:%s:%s'):format(business.id, category.id)
+    local function navigation(data)
+        local cards = {}
+        for _, item in ipairs(data.items or {}) do
+            cards[#cards + 1] = {
+                id = item.name,
+                label = item.label or item.name,
+                description = ('$%d each'):format(item.price or 0),
+                image = itemImage(item.name),
+                actions = { {
+                    id = 'store:purchase', label = 'Pick up', icon = 'shopping-cart', variant = 'primary',
+                    fields = { {
+                        id = 'amount', label = 'Quantity', type = 'number', required = true,
+                        min = 1, max = 1000000, default = 1,
+                    } },
+                } },
+            }
+        end
+        return { {
+            id = 'shop', label = data.label or 'Store', icon = 'store', content = {
+                title = data.label or 'Store',
+                description = 'Choose an ingredient, enter a quantity, and pick it up.',
+                blocks = { {
+                    type = 'list', id = 'store-purchase-items', title = 'Available items',
+                    layout = 'cards', cardStyle = 'compact', columns = 1, searchable = true,
+                    pageSize = 30, searchPlaceholder = 'Search store items…', items = cards,
+                    empty = 'No ingredients are configured for this store.',
+                } },
+            },
+        } }
+    end
+
+    Kora.nui.registerApp({
+        id = appId, title = catalog.label or category.label, description = 'Employee ingredient pickup.',
+        icon = 'store', layout = 'compact', placement = 'right', width = 520,
+        navigation = navigation(catalog),
+        onAction = function(actionId, context)
+            if actionId ~= 'store:purchase' then return end
+            local itemName = tostring(context and context.itemId or '')
+            local values = type(context and context.value) == 'table' and context.value or {}
+            local amount = tonumber(values.amount)
+            if itemName == '' or not amount then return { notice = { tone = 'destructive', message = 'Enter a valid quantity.' } } end
+
+            local ok, result = Kora.callback.trigger('kora_jobcreator:server:purchaseStoreItem', business.id, category.id, itemName, amount)
+            if not ok then return { notice = { tone = 'destructive', message = result or 'Could not complete that purchase.' } } end
+            local refreshed = Kora.callback.trigger('kora_jobcreator:server:storeCatalog', business.id, category.id)
+            return {
+                update = type(refreshed) == 'table' and { title = refreshed.label or category.label, navigation = navigation(refreshed) } or nil,
+                notice = { tone = 'success', message = result or 'Pickup complete.' },
+            }
+        end,
+    })
+    Kora.nui.openApp(appId)
 end
 
 ---@param scope table
@@ -351,47 +481,48 @@ end
 builders.POS = function(business, _, _, module)
     local options = {}
 
-    options[#options + 1] = {
-        label = ('Buy from %s'):format(module.label),
-        icon = module.icon or 'ShoppingCart',
-        -- Customers are the point of a till, so this option is never job-gated.
-        ignoreJobLock = true,
-        canInteract = function()
-            if not module.hideWhenStaffed then return true end
-            if Client.worksFor(business) then return true end
-            return (Client.staff[business.id] or 0) == 0
-        end,
-        onSelect = function()
-            local ok, err = Kora.callback.trigger('kora_jobcreator:server:openShop', module.id)
-            if not ok then Client.notify(err or 'The till is closed.', 'error') end
-        end,
-    }
+    if module.closedShop then
+        options[#options + 1] = {
+            label = 'Browse shop',
+            icon = 'ShoppingCart',
+            canInteract = function()
+                if Client.worksFor(business) then return true end
+                return (Client.staff[business.id] or 0) == 0
+            end,
+            onSelect = function()
+                local ok, err = Kora.callback.trigger('kora_jobcreator:server:openShop', module.id)
+                if not ok then Client.notify(err or 'You cannot use this shop.', 'error') end
+            end,
+        }
 
-    -- These three gate themselves rather than leaning on the module-wide job
-    -- lock, so marking a till `public` (which only ever means "customers may
-    -- walk up to it") cannot accidentally hand its restock and pricing to them.
-    options[#options + 1] = {
-        label = 'Restock',
-        icon = 'PackagePlus',
-        canInteract = function() return Client.worksFor(business) end,
-        onSelect = function()
-            local ok, err = Kora.callback.trigger('kora_jobcreator:server:openStock', module.id)
-            if not ok then Client.notify(err or 'You cannot restock this till.', 'error') end
-        end,
-    }
+        options[#options + 1] = {
+            label = 'Restock',
+            icon = 'PackagePlus',
+            canInteract = function() return Client.worksFor(business) end,
+            onSelect = function()
+                local ok, err = Kora.callback.trigger('kora_jobcreator:server:openStock', module.id)
+                if not ok then Client.notify(err or 'You cannot restock this shop.', 'error') end
+            end,
+        }
+    end
 
-    options[#options + 1] = {
-        label = 'Set prices',
-        icon = 'DollarSign',
-        canInteract = function() return Client.isBoss(business) end,
-        onSelect = function() KoraJobCreator.openPriceEditor(module.id) end,
-    }
+    -- These actions gate themselves so a public closed shop does not expose
+    -- staff controls to customers.
+    -- Only a closed shop has a shelf to price.
+    if module.closedShop then
+        options[#options + 1] = {
+            label = 'Set prices',
+            icon = 'DollarSign',
+            canInteract = function() return Client.isBoss(business) end,
+            onSelect = function() KoraJobCreator.openPriceEditor(module.id) end,
+        }
+    end
 
     options[#options + 1] = {
         label = 'Take a payment',
         icon = 'CreditCard',
         canInteract = function() return Client.worksFor(business) end,
-        onSelect = function() KoraJobCreator.takePayment() end,
+        onSelect = function() KoraJobCreator.takePayment(nil, business.id, module.id) end,
     }
 
     if module.panicButton then
@@ -413,10 +544,14 @@ end
 ---@param business table
 ---@param index integer
 ---@param module table
-local function openCraftingMenu(business, index, module)
+openCraftingMenu = function(business, index, module, category)
+    local recipes, recipesErr = Kora.callback.trigger('kora_jobcreator:server:benchRecipes', business.id, index, category.id)
+    if type(recipes) ~= 'table' then return Client.notify(recipesErr or 'Could not load this business’s recipes.', 'error') end
+    local recipeMap = {}
+    for _, recipe in ipairs(recipes) do if recipe.id ~= nil then recipeMap[tostring(recipe.id)] = recipe end end
     local items = {}
-    for _, recipeId in ipairs(module.recipes) do
-        local recipe = Config.recipes[recipeId]
+    for _, recipeId in ipairs(category.recipes or {}) do
+        local recipe = recipeMap[tostring(recipeId)]
         if recipe then
             local parts, ready = {}, true
             for _, ingredient in ipairs(recipe.ingredients or {}) do
@@ -427,10 +562,10 @@ local function openCraftingMenu(business, index, module)
                 parts[#parts + 1] = ('%s %d/%d'):format(itemLabel(name), have, needed)
             end
             items[#items + 1] = {
-                id = recipeId,
-                label = recipe.label or recipeId,
+                id = tostring(recipeId),
+                label = recipe.label or tostring(recipeId),
                 description = #parts > 0 and table.concat(parts, ', ') or 'No ingredients required',
-                icon = recipe.icon,
+                image = recipe.output and recipe.output.item and itemImage(recipe.output.item),
                 disabled = not ready,
             }
         end
@@ -438,31 +573,71 @@ local function openCraftingMenu(business, index, module)
 
     if #items == 0 then return Client.notify('There is nothing to make here.', 'error') end
 
-    local choice = Kora.nui.openMenu(items, module.label)
-    if not choice or choice.cancelled or not choice.selectedId then return end
-
-    local recipe = Config.recipes[choice.selectedId]
-    if not recipe then return end
-
-    if recipe.time then
-        local completed = Kora.progressbar.start({
-            label = recipe.progressLabel or ('Making %s'):format(recipe.label or choice.selectedId),
-            duration = math.floor(recipe.time),
-            canCancel = true,
-            disable = { move = true, combat = true, car = true },
-            anim = recipe.anim,
-        })
-        if not completed then return end
-    end
-
-    local ok, message = Kora.callback.trigger('kora_jobcreator:server:craft', business.id, index, choice.selectedId)
-    Client.notify(message or (ok and 'Done.' or 'That did not work.'), ok and 'success' or 'error')
+    local appId = ('kora_jobcreator:crafting:%s:%s:%s'):format(business.id, index, category.id)
+    for _, item in ipairs(items) do item.actions = { { id = 'craft:' .. item.id, label = 'Craft', icon = 'hammer', closeBeforeAction = true } } end
+    Kora.nui.registerApp({
+        id = appId, title = category.label, description = ('Choose a %s recipe.'):format(category.label), icon = 'hammer',
+        layout = 'compact', placement = 'right', width = 520, height = 700,
+        navigation = { { id = 'recipes', label = category.label, icon = 'list', content = {
+            title = category.label, description = 'Ingredient counts update each time you open the bench.',
+            blocks = { {
+                type = 'list', id = 'crafting-recipes', layout = 'cards', cardStyle = 'compact',
+                columns = 1, imageFit = 'contain', items = items, empty = 'There is nothing to make here.',
+            } },
+        } } },
+        onAction = function(actionId)
+            local recipeId = actionId:match('^craft:(.+)$')
+            local recipe = recipeId and recipeMap[recipeId]
+            if not recipe then return end
+            if recipe.time and recipe.time > 0 then
+                local progress = {
+                    label = recipe.progressLabel or ('Making %s'):format(recipe.label or recipeId),
+                    duration = math.floor(recipe.time), canCancel = true,
+                    disable = { move = true, combat = true, car = true },
+                }
+                local animation = recipe.animation
+                if animation and animation.type == 'emote' then
+                    progress.emote = animation.name
+                elseif animation and animation.type == 'animation' then
+                    progress.anim = { dict = animation.dict, clip = animation.clip, flag = animation.flag }
+                elseif recipe.anim then
+                    progress.anim = recipe.anim
+                end
+                local completed = Kora.progressbar.start(progress)
+                if not completed then return end
+            end
+            local ok, message = Kora.callback.trigger('kora_jobcreator:server:craft', business.id, index, category.id, recipeId)
+            Client.notify(message or (ok and 'Done.' or 'That did not work.'), ok and 'success' or 'error')
+        end,
+    })
+    Kora.nui.openApp(appId)
 end
 
-builders.Crafting = function(business, _, index, module)
+builders.Crafting = function(business, scope, index, module)
+    if module.crafters then
+        for _, category in ipairs(module.crafters) do
+            for locationIndex in ipairs(category.locations or {}) do
+                Business.attachCraftingLocation(business, scope, index, module, category, locationIndex)
+            end
+        end
+        return nil
+    end
+
+    -- A single anchored bench: one target on the module's own anchor, opening
+    -- its flat recipe list as the `default` category.
+    local category = { id = 'default', label = module.label, recipes = module.recipes }
     return { {
         label = module.label,
         icon = module.icon or 'Hammer',
-        onSelect = function() openCraftingMenu(business, index, module) end,
+        canInteract = function() return Client.job().name == business.job end,
+        onSelect = function() openCraftingMenu(business, index, module, category) end,
     } }
+end
+
+builders.SalesItems = function(business, scope, _, module)
+    for _, category in ipairs(module.stores or {}) do
+        for locationIndex in ipairs(category.locations or {}) do
+            Business.attachStoreLocation(business, scope, module, category, locationIndex)
+        end
+    end
 end

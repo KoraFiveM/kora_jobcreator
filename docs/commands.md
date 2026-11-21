@@ -45,11 +45,17 @@ The console is a `kora_lib` app (id `kora_jobcreator:management`).
 - **Businesses** view: searchable cards with job, module count and staff present. Admins also get "Create business" (name and job).
 - **Business** view: tabs.
   - **Overview** - balance (from `kora_bossmenu`, or "Unavailable"), module count, staff present, business id, job, revision and management level. Admins can rename or reassign the business and delete it. Renaming changes the label only; the id never changes.
+  - **Modules** (admin only) - module cards with "Add module", "Edit data", "Rebuild" and "Delete". Rebuild is not offered for Sales Items or crafters with categories, which have no anchor of their own.
+  - **Tills** (admin only) - place a till or closed shop, and edit its label, closed-shop flag, customer currency and panic button.
+  - **Stashes** (admin only) - place a stash, and edit its label, slots, weight and access without losing its contents.
+  - **Sales Items** (admin only) - add items from the shared item registry, or remove them.
+  - **Stores** (admin only) - create stores, add and price items, choose who pays, place and remove pickup locations.
+  - **Recipes** (admin only) - create, edit and delete business recipes; a recipe still in use cannot be deleted. The shared library is listed read-only.
+  - **Crafters** (admin only) - create crafters, add, rename and delete categories, assign recipes, and place or remove category locations. Single benches show here for recipe editing.
   - **Activity** - the latest log rows (up to 50 are requested).
-  - **Modules** (admin only) - module cards with "Add module", "Edit data", "Rebuild" and "Delete".
   - **Debug** (admin only) - copy business or module JSON, and toggle zone and target outlines on that admin's own client.
 
-Adding a module asks for its type, then its anchor, then whether it wants a blip, then type-specific fields. Anchors are placed in the world with the `kora_lib` tools (zone creator for sphere, box and poly; placement tool for prop, ped and vehicle; or aiming at an existing object and pressing E). Placement actions close the console first and reopen it on the same business and module afterwards. "Edit data" shows the module as JSON and saves it through the normal validation. "Rebuild" changes type or placement.
+Adding a module asks for its type, then its anchor, then whether it wants a blip, then type-specific fields. Anchors are placed in the world with the `kora_lib` tools (zone creator for sphere, box and poly; placement tool for prop, ped and vehicle; or aiming at an existing object and pressing E). Placement actions close the console first and reopen it on the same business and page afterwards. Store and crafter locations are placed by aiming and pressing E (Backspace cancels); entering a prop model first means only that prop can be picked. "Edit data" shows the module as JSON and saves it through the normal validation. "Rebuild" changes type or placement.
 
 ### In-world interactions
 

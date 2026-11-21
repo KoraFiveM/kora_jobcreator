@@ -179,4 +179,58 @@ H.nope(S.hasPerimeter(flat), 'a business may have no perimeter')
 H.ok(S.isStartupModule(flat, flat.modules[1]),
     'with no perimeter to trigger it, every module is built eagerly')
 
+-- Category crafters: no anchor of their own, each category carries recipes and
+-- locations. The single anchored bench keeps working unchanged.
+local crafter = S.normaliseModule({ moduleType = 'Crafting', label = 'Kitchen', crafters = {
+    { label = 'Grill', recipes = { 'bs_burger', 'bs_burger', 7 },
+      locations = { { x = 1, y = 2, z = 3, model = 'prop_grill' } } },
+    { label = 'Grill', recipes = {}, locations = {} },
+} })
+H.ok(crafter and crafter.crafters, 'a crafter with categories needs no anchor')
+H.equal(crafter.crafters[1].id, 'grill', 'a category id is derived from its label')
+H.equal(crafter.crafters[2].id, 'grill_2', 'duplicate category labels get distinct ids')
+H.equal(#crafter.crafters[1].recipes, 2, 'duplicate recipe references collapse')
+H.equal(crafter.crafters[1].recipes[2], '7', 'a numeric recipe reference becomes a string id')
+H.equal(crafter.crafters[1].locations[1].model, 'prop_grill', 'a location keeps the prop it was aimed at')
+H.ok(S.normaliseModule({ moduleType = 'Crafting', label = 'Empty kitchen' }), 'a new crafter may start with no categories')
+refuses('an anchored bench still needs recipes', { moduleType = 'Crafting', zoneType = 'sphere', coords = { x = 0, y = 0, z = 0 } })
+refuses('a category needs a name', { moduleType = 'Crafting', crafters = { { recipes = {} } } })
+refuses('a malformed category location is refused', { moduleType = 'Crafting', crafters = { { label = 'A', locations = { { x = 'no' } } } } })
+
+-- Sales items and employee stores.
+local sales = S.normaliseModule({ moduleType = 'SalesItems', items = { 'Burger', 'fries', 'burger' }, stores = {
+    { label = 'Produce', items = { { item = 'Lettuce', price = 3 } }, locations = { { x = 0, y = 0, z = 0 } } },
+} })
+H.ok(sales, 'a sales items module validates')
+H.equal(#sales.items, 2, 'sales items are lower-cased and de-duplicated')
+H.equal(sales.stores[1].items[1].item, 'lettuce', 'store item names are lower-cased')
+H.equal(sales.stores[1].payFrom, 'player', 'a store is paid for by the employee by default')
+refuses('a store price must be in range', { moduleType = 'SalesItems', stores = { { label = 'A', items = { { item = 'x', price = -1 } } } } })
+refuses('a store pays from the player or the business', { moduleType = 'SalesItems', stores = { { label = 'A', payFrom = 'bank' } } })
+local twice = S.normaliseBusiness({ label = 'Twice', job = 'twice', modules = {
+    { moduleType = 'SalesItems', items = { 'a' } }, { moduleType = 'SalesItems', items = { 'b' } },
+} })
+H.equal(#twice.modules, 1, 'a business keeps only one sales items module')
+H.equal(#twice.rejected, 1, 'the duplicate sales items module is reported')
+
+-- Tills: closed shop flag.
+local closed = S.normaliseModule({ moduleType = 'POS', id = 'front', closedShop = true,
+    zoneType = 'sphere', coords = { x = 0, y = 0, z = 0 } })
+H.equal(closed.closedShop, true, 'a till may be a closed shop')
+H.equal(S.normaliseModule({ moduleType = 'POS', id = 'front', zoneType = 'sphere', coords = { x = 0, y = 0, z = 0 } }).closedShop,
+    false, 'a till is staffed unless marked closed')
+
+-- Business recipes.
+local recipe = S.normaliseRecipe({ label = 'Salad', time = 2500,
+    ingredients = { { item = 'Lettuce', amount = 2 } }, give = { { item = 'salad' } } })
+H.ok(recipe, 'a business recipe validates')
+H.equal(recipe.ingredients[1].item, 'lettuce', 'ingredient names are lower-cased')
+H.equal(recipe.give[1].amount, 1, 'an output amount defaults to one')
+H.rejects(S.normaliseRecipe({ label = 'Nothing', ingredients = {} }), select(2, S.normaliseRecipe({ label = 'Nothing' })),
+    'a recipe needs an output')
+H.rejects(S.normaliseRecipe({ give = { { item = 'x' } } }), select(2, S.normaliseRecipe({ give = { { item = 'x' } } })),
+    'a recipe needs a name')
+H.rejects(S.normaliseRecipe({ label = 'Big', give = { { item = 'x', amount = 5000 } } }),
+    select(2, S.normaliseRecipe({ label = 'Big', give = { { item = 'x', amount = 5000 } } })), 'amounts are capped')
+
 H.finish('schema')

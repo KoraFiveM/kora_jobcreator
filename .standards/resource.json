@@ -17,9 +17,11 @@
       "server/main.lua",
       "server/payment.lua",
       "server/pos.lua",
+      "server/recipes.lua",
       "server/register.lua",
       "server/staff.lua",
       "server/state.lua",
+      "server/stores.lua",
       "server/tables.lua"
     ],
     "shared": [
@@ -35,10 +37,12 @@
     ],
     "test": [
       "test/harness.lua",
+      "test/no_raw_print.lua",
       "test/smoke/access.lua",
       "test/smoke/client.lua",
       "test/smoke/contract.lua",
       "test/smoke/crafting.lua",
+      "test/smoke/logging.lua",
       "test/smoke/pos.lua",
       "test/smoke/schema.lua",
       "test/smoke/security.lua",
@@ -46,7 +50,8 @@
       "test/smoke/seeds.lua",
       "test/smoke/useables.lua",
       "test/smoke/webhook_fallback.lua",
-      "test/smoke/webhook_privacy.lua"
+      "test/smoke/webhook_privacy.lua",
+      "test/smoke/workspace.lua"
     ]
   },
   "exclude": [
@@ -71,5 +76,5 @@
     "modules/lookup/data/*"
   ],
   "project": "Kora Framework",
-  "copyright": "Copyright © 2026 Kora Framework"
+  "copyright": "Copyright \u00a9 2026 Kora Framework"
 }

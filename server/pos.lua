@@ -87,6 +87,19 @@ end
 function Pos.accepts(shopId, itemName)
     local record = shops[shopId]
     if not record then return false end
+    -- A closed shop shelves exactly what the business sells: its Sales Items
+    -- list, when it has one, is the whole policy.
+    if record.module.closedShop then
+        local business = State.get(record.businessId)
+        for _, module in ipairs(business and business.modules or {}) do
+            if module.moduleType == 'SalesItems' and #module.items > 0 then
+                for _, name in ipairs(module.items) do
+                    if name == itemName then return true end
+                end
+                return false
+            end
+        end
+    end
     if not record.restricted then return true end
     return record.fixed[itemName] ~= nil
 end
@@ -207,7 +220,9 @@ function Pos.register(business, module)
         if not record then return false, 'this till is closed' end
         local currentBusiness = State.get(record.businessId)
         if not currentBusiness then return false, 'this business is closed' end
-        if not record.module.hideWhenStaffed then return true end
+        -- Only a closed shop has a customer shelf. A staffed till sells through
+        -- itemized payments, so its shop inventory is never opened directly.
+        if not record.module.closedShop then return false, 'a member of staff will serve you' end
         if State.worksFor(src, currentBusiness.job) then return true end
         if Staff.countFor(currentBusiness.id) > 0 then return false, 'a member of staff will serve you' end
         return true
@@ -431,7 +446,12 @@ AddEventHandler('kora_inventory:server:audit', function(action, src, details)
     if not business then return end
 
     local gross = math.floor(tonumber(details.price) or 0)
-    local tax = math.floor(gross * (module.tax / 100))
+    -- A closed shop sells while nobody is working, so it pays no sold-stock
+    -- commission; `Config.pos.closedShopCut` of the sale is withheld instead.
+    local closed = module.closedShop == true
+    local rate = closed and (tonumber(Config.pos.closedShopCut) or 0) * 100 or module.tax
+    rate = math.min(math.max(rate, 0), 100)
+    local tax = math.floor(gross * (rate / 100))
     local net = gross - tax
 
     local ok, err = Pos.credit(business.job, net, 'till sale')
@@ -444,7 +464,7 @@ AddEventHandler('kora_inventory:server:audit', function(action, src, details)
     -- at intake, never an employee-supplied price or a client field.
     local commission = 0
     local attribution = details.serverData and details.serverData.kora_jobcreator
-    if ok and type(attribution) == 'table' and attribution.business == business.id
+    if ok and not closed and type(attribution) == 'table' and attribution.business == business.id
         and attribution.shop == details.shop and type(attribution.stocker) == 'string' then
         local requested = math.min(math.floor(gross * (module.commission / 100)), net)
         local employee = requested > 0 and exports.kora_core:getPlayerByCitizenId(attribution.stocker) or nil
@@ -471,7 +491,7 @@ AddEventHandler('kora_inventory:server:audit', function(action, src, details)
         category = 'sale', src = src, amount = toBusiness, webhook = module.webhook,
         message = ('Sold %dx %s for $%d.'):format(details.amount or 1, details.item or '?', gross),
         fields = {
-            { name = 'Tax', value = ('$%d'):format(tax), inline = true },
+            { name = closed and 'Withheld' or 'Tax', value = ('$%d'):format(tax), inline = true },
             { name = 'Commission', value = ('$%d'):format(commission), inline = true },
             { name = 'To business', value = ('$%d'):format(toBusiness), inline = true },
         },
@@ -496,12 +516,19 @@ end
 Kora.callback.register('kora_jobcreator:server:openShop', function(src, shopId)
     local record = shops[shopId]
     if not record then return false, 'Unknown till.' end
+    if not record.module.closedShop then return false, 'A member of staff will serve you.' end
+    local business = State.get(record.businessId)
+    if not business then return false, 'This business is closed.' end
+    if not State.worksFor(src, business.job) and Staff.countFor(business.id) > 0 then
+        return false, 'A member of staff will serve you.'
+    end
     return exports.kora_inventory:OpenInventory(src, record.module.id, { type = 'shop', id = record.module.id })
 end, { rateLimit = { max = 10, window = 10000 } })
 
 Kora.callback.register('kora_jobcreator:server:openStock', function(src, shopId)
-    local _, _, err = tillContext(src, shopId)
+    local _, module, err = tillContext(src, shopId)
     if err then return false, err end
+    if not module.closedShop then return false, 'Only a closed shop is restocked.' end
     return exports.kora_inventory:stashOpen(src, stockId(shopId))
 end, { rateLimit = { max = 10, window = 10000 } })
 

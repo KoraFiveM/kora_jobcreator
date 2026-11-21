@@ -11,7 +11,7 @@ Policy lives in `config.lua` (shared, sent to every client) and `server/config.l
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `Config.debug` | `false` | Draws zones and targets for every client. An admin can also toggle this locally from the console's Debug tab. |
+| `Config.debug` | `false` | Draws zones and targets for every client. |
 | `Config.adminPermission` | `'admin'` | Permission checked with `exports.kora_core:hasPermission`. Required to create, edit and delete businesses and modules. |
 | `Config.command` | `'jobcreator'` | Chat command that opens the console. |
 | `Config.notifyTitle` | `'Job Creator'` | Title of notifications. |
@@ -25,7 +25,15 @@ Policy lives in `config.lua` (shared, sent to every client) and `server/config.l
 | `stockSlots` | `50` | Default intake stash slots. |
 | `stockWeight` | `1000000` | Intake stash max weight. |
 | `currency` | `'cash'` | Default customer account, `cash` or `bank`. |
-| `maxPrice` | `1000000` | Highest price an employee or boss may set. |
+| `maxPrice` | `1000000` | Highest price an employee or boss may set, and the highest store price. |
+| `closedShopCut` | `0.20` | Fraction (not percent) of each closed-shop sale withheld rather than credited to the business. |
+
+## Employee stores: `Config.stores`
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `account` | `'bank'` | Account charged when a store is paid for by the employee. `cash` or `bank`. |
+| `maxQuantity` | `100` | Largest quantity one pickup may request. |
 
 ## Stashes: `Config.stash`
 
@@ -42,9 +50,7 @@ Policy lives in `config.lua` (shared, sent to every client) and `server/config.l
 | `commission` | `0.10` | Fraction (not percent) of each payment paid to the employee. |
 | `distance` | `5.0` | Maximum distance between employee and customer, also the target distance. |
 | `maxAmount` | `1000000` | Largest amount that can be billed. |
-| `account` | `'bank'` | Customer account that is debited. |
-
-Note the units: `Config.payment.commission` is a fraction, while the POS module `commission` and `tax` are percentages.
+The buyer chooses cash or card in the Appshell invoice. Cash debits `cash`; card debits `bank`. `Config.payment.commission` is a fraction, while the POS module `commission` and `tax` are percentages.
 
 ## Panic button: `Config.panic`
 
@@ -91,8 +97,8 @@ Defined in `server/config.lua` so URLs are never sent to clients (registered as 
 | `default` | Receives every business event. Empty by default. |
 | a job name | The code also reads `Config.webhooks[job]` and sends that job's events there too. Only `default` is registered with the config registry, so confirm a job key survives `Kora.config.adopt` on your server (see [Troubleshooting](./troubleshooting.md)). |
 
-A POS module may add a third URL with its `webhook` field. Duplicate URLs are sent once. Webhook URLs on modules are removed from client snapshots; the exports return them (see [Exports](./api/cross-resource-exports.md)). Every log entry is also written to `kora_jobcreator_logs` and `Kora.logging.event` regardless of webhooks. Embed colours are set per category: `sale`, `stock`, `payment`, `craft`, `admin`, `panic`.
+Every log entry is also written to `kora_jobcreator_logs` and `Kora.logging.event` regardless of webhooks. Embed colours are set per category: `sale`, `stock`, `payment`, `craft`, `admin`, `panic`.
 
 ## Libraries
 
-`Config.recipes`, `Config.shopItems` and `Config.seeds` are filled by files in `shared/`. Edits take effect after the resource restarts.
+`Config.recipes`, `Config.shopItems` and `Config.seeds` are filled by files in `shared/`. Edits take effect after the resource restarts. Business recipes created on a business's Recipes page are stored in `kora_jobcreator_business_recipes` and are available immediately.
