@@ -10,6 +10,7 @@
       "client/state.lua"
     ],
     "server": [
+      "kora_versioncheck.lua",
       "server/admin.lua",
       "server/config.lua",
       "server/crafting.lua",
