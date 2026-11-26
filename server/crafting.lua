@@ -174,7 +174,7 @@ function Crafting.registerUseable(business, module, binding)
         if not business or not module then return false end
         local consume = module.consume
         if consume > 0 and not exports.kora_core:removeItem(src, module.item, consume) then
-            return Kora.notify.send(src, { title = Config.notifyTitle, message = 'You do not have that.', type = 'error' })
+            return Kora.bridge.sendNotify(src, { title = Config.notifyTitle, message = 'You do not have that.', type = 'error' })
         end
 
         local ok, message
@@ -205,7 +205,7 @@ function Crafting.registerUseable(business, module, binding)
             exports.kora_core:addItem(src, module.item, consume)
         end
 
-        Kora.notify.send(src, {
+        Kora.bridge.sendNotify(src, {
             title = Config.notifyTitle, message = message or 'Nothing happened.',
             type = ok and 'success' or 'error',
         })

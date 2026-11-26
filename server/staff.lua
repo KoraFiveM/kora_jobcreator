@@ -160,7 +160,7 @@ Kora.callback.register('kora_jobcreator:server:setDuty', function(src, businessI
     local ok, err = exports.kora_core:setJobDuty(src, onDuty == true)
     if not ok then return false, err end
     if onDuty ~= true then forget(src) end
-    Kora.notify.send(src, {
+    Kora.bridge.sendNotify(src, {
         title = Config.notifyTitle,
         message = ('You are now %s duty.'):format(onDuty and 'on' or 'off'),
         type = 'info',

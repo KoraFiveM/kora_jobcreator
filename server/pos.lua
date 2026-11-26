@@ -355,7 +355,7 @@ function Pos.intake(src, shopId)
     if not next(moved) then
         intaking[shopId] = nil
         if next(rejected) then
-            Kora.notify.send(src, { title = Config.notifyTitle, message = 'This till does not stock those items.', type = 'error' })
+            Kora.bridge.sendNotify(src, { title = Config.notifyTitle, message = 'This till does not stock those items.', type = 'error' })
         end
         return
     end
@@ -363,7 +363,7 @@ function Pos.intake(src, shopId)
     local ok, err = exports.kora_inventory:SetShopItems(shopId, shelf)
     if not ok then
         intaking[shopId] = nil
-        Kora.notify.send(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
+        Kora.bridge.sendNotify(src, { title = Config.notifyTitle, message = 'The shelf is full.', type = 'error' })
         Kora.logging.warn('pos.stock_failed', 'Could not stock shop', { shopId = shopId, error = tostring(err) })
         return
     end
@@ -380,7 +380,7 @@ function Pos.intake(src, shopId)
     for name, amount in pairs(moved) do summary[#summary + 1] = ('%dx %s'):format(amount, name) end
     table.sort(summary)
 
-    Kora.notify.send(src, {
+    Kora.bridge.sendNotify(src, {
         title = Config.notifyTitle,
         message = module.commission > 0
             and ('Stocked %s. Commission is paid as this stock sells.'):format(table.concat(summary, ', '))
@@ -389,7 +389,7 @@ function Pos.intake(src, shopId)
     })
 
     if next(rejected) then
-        Kora.notify.send(src, { title = Config.notifyTitle, message = 'Some items were left behind: this till does not stock them.', type = 'warning' })
+        Kora.bridge.sendNotify(src, { title = Config.notifyTitle, message = 'Some items were left behind: this till does not stock them.', type = 'warning' })
     end
 
     Logs.record(business, {
@@ -452,7 +452,7 @@ AddEventHandler('kora_inventory:server:audit', function(action, src, details)
                 local paid = exports.kora_core:addMoney(employee.source, 'bank', requested, 'kora_jobcreator-sale-commission')
                 if paid then
                     commission = requested
-                    Kora.notify.send(employee.source, {
+                    Kora.bridge.sendNotify(employee.source, {
                         title = Config.notifyTitle,
                         message = ('Stock commission: $%d'):format(commission),
                         type = 'success',

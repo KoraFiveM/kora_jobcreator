@@ -17,7 +17,7 @@ Client.debug = Config.debug == true
 ---@param message string
 ---@param kind? KoraNotifyType
 function Client.notify(message, kind)
-    Kora.notify.send({ title = Config.notifyTitle, message = message, type = kind or 'info' })
+    Kora.bridge.sendNotify({ title = Config.notifyTitle, message = message, type = kind or 'info' })
 end
 
 ---@param coords table
