@@ -79,7 +79,7 @@ end
 ---recoverable from its hash at runtime -- only its dimensions are.
 ---@return table|nil
 local function pickExisting()
-    local prompt = Kora.bridge.drawTextTextTextText('Look at the object and press ~b~E~s~ -- ~r~Backspace~s~ to cancel')
+    local prompt = Kora.bridge.drawText('Look at the object and press ~b~E~s~ -- ~r~Backspace~s~ to cancel')
     local fields
 
     while true do
