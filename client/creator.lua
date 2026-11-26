@@ -79,7 +79,7 @@ end
 ---recoverable from its hash at runtime -- only its dimensions are.
 ---@return table|nil
 local function pickExisting()
-    local prompt = Kora.textui.show('Look at the object and press ~b~E~s~ -- ~r~Backspace~s~ to cancel')
+    local prompt = Kora.bridge.drawText('Look at the object and press ~b~E~s~ -- ~r~Backspace~s~ to cancel')
     local fields
 
     while true do
@@ -104,7 +104,7 @@ local function pickExisting()
         end
     end
 
-    Kora.textui.hide(prompt)
+    Kora.bridge.hideText(prompt)
     return fields
 end
 

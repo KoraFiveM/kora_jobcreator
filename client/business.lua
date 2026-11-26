@@ -331,8 +331,7 @@ builders.BossMenu = function(business, _, _, module)
                 return Client.notify('The boss menu is unavailable.', 'error')
             end
             ---@type KoraBossMenuClientExports
-            local bossMenu = exports.kora_bossmenu
-            bossMenu:openBossMenu()
+            Kora.bridge.openBossMenu()
         end,
     } }
 end

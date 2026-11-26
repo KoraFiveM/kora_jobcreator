@@ -91,10 +91,10 @@ function Payment.request(src, target)
             return false, creditErr or 'The business account is unavailable.'
         end
 
-        Kora.notify.send(target, {
+        Kora.bridge.sendNotify(target, {
             title = Config.notifyTitle, message = ('You paid %s $%d.'):format(business.label, amount), type = 'success',
         })
-        Kora.notify.send(src, {
+        Kora.bridge.sendNotify(src, {
             title = Config.notifyTitle,
             message = commission > 0 and ('Took $%d. Your commission: $%d.'):format(amount, commission) or ('Took $%d.'):format(amount),
             type = 'success',
