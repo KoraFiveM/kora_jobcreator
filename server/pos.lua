@@ -124,8 +124,7 @@ function Pos.credit(job, amount, reason)
     if amount <= 0 then return true end
     if not bossMenuReady() then return false, 'no business account resource is running' end
     ---@type KoraBossMenuLedgerExports
-    local bossMenu = exports.kora_bossmenu
-    return bossMenu:addBusinessMoney(job, amount, reason)
+    return Kora.bridge.addSocietyMoney(job, amount, reason)
 end
 
 ---@param job string
@@ -137,8 +136,7 @@ function Pos.debit(job, amount, reason)
     if amount <= 0 then return true end
     if not bossMenuReady() then return false, 'no business account resource is running' end
     ---@type KoraBossMenuLedgerExports
-    local bossMenu = exports.kora_bossmenu
-    return bossMenu:removeBusinessMoney(job, amount, reason)
+    return Kora.bridge.removeSocietyMoney(job, amount, reason)
 end
 
 local function addBoundary(record, module)

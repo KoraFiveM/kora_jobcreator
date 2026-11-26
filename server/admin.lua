@@ -177,8 +177,7 @@ Kora.callback.register('kora_jobcreator:server:balance', function(src, businessI
     if not business then return nil, err end
     if GetResourceState('kora_bossmenu') ~= 'started' then return nil, 'No business account resource is running.' end
     ---@type KoraBossMenuBalanceExports
-    local bossMenu = exports.kora_bossmenu
-    return bossMenu:getBusinessBalance(business.job)
+    return Kora.bridge.getSocietyAccountBalance(business.job)
 end, { rateLimit = { max = 10, window = 10000 } })
 
 exports('getBusinesses', function() return State.snapshot(true) end)
